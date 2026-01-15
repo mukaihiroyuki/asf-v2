@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-premium-gold: #d4af37;
+  --color-premium-cyan: #00d4ff;
+  --color-premium-navy: #0a0f1d;
+  --color-premium-glass: rgba(255, 255, 255, 0.05);
+
+  --animate-shimmer: shimmer 2s linear infinite;
+
+  @keyframes shimmer {
+    from {
+      background-position: 0 0;
+    }
+
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+:root {
+  --background: #fdfbf7;
+  --foreground: #2c241a;
+  /* Fonts from RootLayout (next/font) */
+  --font-sans: var(--font-noto-jp), var(--font-outfit), sans-serif;
+  --font-heading: var(--font-outfit), var(--font-noto-jp), sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #fdfbf7 0%, #f5f2e9 100%);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+
+h1,
+h2,
+h3,
+.premium-heading {
+  font-family: var(--font-heading);
+  letter-spacing: -0.03em;
+  font-weight: 900;
+  color: #1a1612;
+}
+
+/* Glassmorphism Utility (Light Mode Optimized) */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 15px 35px 0 rgba(139, 115, 85, 0.1);
+}
+
+.premium-gradient-text {
+  background: linear-gradient(135deg, #b8860b 0%, #008ba3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 2px rgba(184, 134, 11, 0.1));
+}
+
+.premium-button {
+  background: linear-gradient(135deg, #d4af37 0%, #00d4ff 100%);
+  color: white;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.premium-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.3);
+}
+
+.premium-input {
+  background: #ffffff;
+  border: 1px solid rgba(139, 115, 85, 0.2);
+  color: #2c241a;
+  transition: all 0.3s ease;
+}
+
+.premium-input::placeholder {
+  color: rgba(44, 36, 26, 0.3);
+}
+
+.premium-input:focus {
+  border-color: #d4af37;
+  background: #ffffff;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
+}
