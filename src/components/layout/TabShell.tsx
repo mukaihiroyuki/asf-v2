@@ -7,10 +7,11 @@ type TabType = 'contract' | 'customers' | 'payment' | 'overdue';
 interface TabShellProps {
     userName: string;
     onLogout: () => void;
+    activeLink?: string | null;
     children: (activeTab: TabType) => React.ReactNode;
 }
 
-const TabShell: React.FC<TabShellProps> = ({ userName, onLogout, children }) => {
+const TabShell: React.FC<TabShellProps> = ({ userName, onLogout, activeLink, children }) => {
     const [activeTab, setActiveTab] = useState<TabType>('contract');
 
     const tabs: { id: TabType; label: string; icon: string }[] = [
@@ -22,6 +23,10 @@ const TabShell: React.FC<TabShellProps> = ({ userName, onLogout, children }) => 
 
     const handleTabClick = (id: TabType) => {
         if (id === 'customers') {
+            if (activeLink) {
+                window.open(activeLink, '_blank');
+                return;
+            }
             const sid = localStorage.getItem('asf_spreadsheet_id');
             if (sid) {
                 window.open(`https://docs.google.com/spreadsheets/d/${sid}/edit`, '_blank');

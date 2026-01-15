@@ -19,6 +19,7 @@ interface Customer {
 interface ContractFormProps {
     staffName: string;
     spreadsheetId: string;
+    onSelectCustomer?: (link: string | null) => void;
 }
 
 // 共通コピーバッジコンポーネント
@@ -50,7 +51,7 @@ const CopyBadge: React.FC<{ text: string; label?: string }> = ({ text, label = '
     );
 };
 
-const ContractForm: React.FC<ContractFormProps> = ({ staffName, spreadsheetId }) => {
+const ContractForm: React.FC<ContractFormProps> = ({ staffName, spreadsheetId, onSelectCustomer }) => {
     const [interviewId, setInterviewId] = useState('');
     const [contractName, setContractName] = useState('');
     const [onboarding, setOnboarding] = useState(false);
@@ -190,8 +191,13 @@ const ContractForm: React.FC<ContractFormProps> = ({ staffName, spreadsheetId })
                         className={`w-full bg-white border ${error ? 'border-red-500' : 'border-slate-200'} rounded-2xl px-6 py-4 text-xl font-black text-slate-800 focus:border-premium-gold outline-none appearance-none cursor-pointer shadow-sm`}
                         value={interviewId}
                         onChange={(e) => {
-                            setInterviewId(e.target.value);
+                            const val = e.target.value;
+                            setInterviewId(val);
                             setError(null);
+                            if (onSelectCustomer) {
+                                const customer = allCustomers.find(c => c.id === val);
+                                onSelectCustomer(customer?.link || null);
+                            }
                         }}
                         required
                     >

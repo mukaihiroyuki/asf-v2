@@ -6,14 +6,16 @@ import { gasApi } from '@/lib/api/gasClient';
 interface Customer {
     id: string;
     customerName: string;
+    link?: string;
 }
 
 interface PaymentFormProps {
     staffName: string;
     spreadsheetId: string;
+    onSelectCustomer?: (link: string | null) => void;
 }
 
-const PaymentForm: React.FC<PaymentFormProps> = ({ staffName, spreadsheetId }) => {
+const PaymentForm: React.FC<PaymentFormProps> = ({ staffName, spreadsheetId, onSelectCustomer }) => {
     const [customerId, setCustomerId] = useState('');
     const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
     const [amount, setAmount] = useState('');
@@ -82,7 +84,14 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ staffName, spreadsheetId }) =
                 <select
                     className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-xl text-slate-800 focus:border-premium-gold outline-none appearance-none cursor-pointer shadow-sm"
                     value={customerId}
-                    onChange={(e) => setCustomerId(e.target.value)}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        setCustomerId(val);
+                        if (onSelectCustomer) {
+                            const customer = customers.find(c => c.id === val);
+                            onSelectCustomer(customer?.link || null);
+                        }
+                    }}
                     required
                 >
                     <option value="">選択してください</option>

@@ -11,6 +11,7 @@ import OverdueList from "@/components/lists/OverdueList";
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<{ name: string; spreadsheetId: string } | null>(null);
+  const [activeLink, setActiveLink] = useState<string | null>(null);
 
   useEffect(() => {
     const savedName = localStorage.getItem('asf_staff_name');
@@ -41,17 +42,25 @@ export default function Home() {
   }
 
   return (
-    <TabShell userName={user.name} onLogout={handleLogout}>
+    <TabShell userName={user.name} onLogout={handleLogout} activeLink={activeLink}>
       {(activeTab) => (
         <div className="space-y-6">
           {activeTab === 'contract' && (
             <div className="glass-panel p-8 rounded-3xl animate-in fade-in slide-in-from-right duration-500">
-              <ContractForm staffName={user.name} spreadsheetId={user.spreadsheetId} />
+              <ContractForm
+                staffName={user.name}
+                spreadsheetId={user.spreadsheetId}
+                onSelectCustomer={(link) => setActiveLink(link)}
+              />
             </div>
           )}
           {activeTab === 'payment' && (
             <div className="glass-panel p-8 rounded-3xl animate-in fade-in slide-in-from-right duration-500">
-              <PaymentForm staffName={user.name} spreadsheetId={user.spreadsheetId} />
+              <PaymentForm
+                staffName={user.name}
+                spreadsheetId={user.spreadsheetId}
+                onSelectCustomer={(link) => setActiveLink(link)}
+              />
             </div>
           )}
           {activeTab === 'overdue' && (
