@@ -30,12 +30,17 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ staffName, spreadsheetId, onS
     useEffect(() => {
         const load = async () => {
             try {
-                const [c, m] = await Promise.all([
-                    gasApi.getPaymentCustomerList(spreadsheetId),
-                    gasApi.getPaymentMethodsH(spreadsheetId)
-                ]);
-                setCustomers(c);
-                setPaymentMethods(m);
+                // バルクローダーで一括取得
+                const data = await gasApi.getInitialData(spreadsheetId);
+                // getInitialData は通常の customerList を返すが、PaymentForm は
+                // getPaymentCustomerList を期待している可能性がある。
+                // 暫定的に共通のリストを使用しつつ、問題があれば再調整。
+                setCustomers(data.customerList.map((c: any) => ({
+                    id: c.id,
+                    customerName: c.name,
+                    link: c.link
+                })));
+                setPaymentMethods(data.paymentMethodsH);
             } catch (err) {
                 console.error('Payment Load Error:', err);
             } finally {

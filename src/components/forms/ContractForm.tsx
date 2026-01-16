@@ -82,14 +82,11 @@ const ContractForm: React.FC<ContractFormProps> = ({ staffName, spreadsheetId, o
             setIsLoading(true);
             setError(null);
             try {
-                const [p, c, m] = await Promise.all([
-                    gasApi.getPlanList(),
-                    gasApi.getCustomerList(spreadsheetId),
-                    gasApi.getPaymentMethods(spreadsheetId)
-                ]);
-                setPlans(p);
-                setAllCustomers(c);
-                setPaymentMethods(m);
+                // バルクローダーで一括取得
+                const data = await gasApi.getInitialData(spreadsheetId);
+                setPlans(data.planList);
+                setAllCustomers(data.customerList);
+                setPaymentMethods(data.paymentMethods);
             } catch (err: any) {
                 console.error('Data Load Error:', err);
                 setError(err.message || 'データの取得に失敗したぜ。');
