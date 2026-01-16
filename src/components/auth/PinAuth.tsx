@@ -53,8 +53,8 @@ const PinAuth: React.FC<PinAuthProps> = ({ onSuccess }) => {
         setPin(['', '', '', '']);
         inputRefs.current[0]?.focus();
       }
-    } catch (err) {
-      setError('サーバーと通信できませんでした。デプロイ設定を確認してくれ！');
+    } catch (err: any) {
+      setError(err.message || 'サーバーと通信できませんでした。デプロイ設定を確認してくれ！');
     } finally {
       setIsLoading(false);
     }
