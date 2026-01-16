@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { gasApi } from '@/lib/api/gasClient';
+import LoadingNirvana from '../ui/LoadingNirvana';
 
 interface OverdueCustomer {
     id: string;
@@ -46,7 +47,7 @@ const OverdueList: React.FC = () => {
 
             <div className="grid grid-cols-1 gap-3">
                 {isLoading ? (
-                    <div className="py-20 text-center text-slate-500 animate-pulse">リストを取得中...</div>
+                    <LoadingNirvana />
                 ) : (
                     <>
                         {overdueCustomers.map((customer) => (

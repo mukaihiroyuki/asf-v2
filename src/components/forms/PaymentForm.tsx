@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { gasApi } from '@/lib/api/gasClient';
+import LoadingNirvana from '../ui/LoadingNirvana';
 
 interface Customer {
     id: string;
@@ -70,7 +71,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ staffName, spreadsheetId, onS
         }
     };
 
-    if (isFetching) return <div className="py-20 text-center text-slate-500 animate-pulse">データを読み込み中...</div>;
+    if (isFetching) return <LoadingNirvana />;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in duration-500">

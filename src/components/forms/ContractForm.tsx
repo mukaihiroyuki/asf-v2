@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { gasApi } from '@/lib/api/gasClient';
+import LoadingNirvana from '../ui/LoadingNirvana';
 
 interface Plan {
     id: string;
@@ -159,6 +160,8 @@ const ContractForm: React.FC<ContractFormProps> = ({ staffName, spreadsheetId, o
             setIsSubmitting(false);
         }
     };
+
+    if (isLoading) return <LoadingNirvana />;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in duration-700">
