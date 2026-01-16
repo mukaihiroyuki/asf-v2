@@ -24,7 +24,7 @@ const LoadingNirvana: React.FC<LoadingNirvanaProps> = ({ type = 'form' }) => {
     useEffect(() => {
         const interval = setInterval(() => {
             setMessageIndex((prev) => (prev + 1) % MESSAGES.length);
-        }, 800);
+        }, 1600);
         return () => clearInterval(interval);
     }, []);
 
