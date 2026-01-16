@@ -353,21 +353,20 @@ const ContractForm: React.FC<ContractFormProps> = ({ staffName, spreadsheetId, o
                         <span className="text-base font-bold text-emerald-700">✅ 契約書チェックフォーム</span>
                         <span className="text-emerald-400 group-hover:translate-x-1 transition-transform">→</span>
                     </a>
-                    <a href="https://docs.google.com/forms/d/1-nGsZEGAMvCSmCXEieT2exjsbRpRnBj052TzrV0CRKY/viewform?edit_requested=true#responses"
-                        target="_blank" className="flex items-center justify-between p-5 bg-rose-50 border border-rose-100 rounded-2xl hover:bg-rose-100 transition-all group animate-pulse">
-                        <span className="text-base font-bold text-rose-700">📋 自社分割 手続きフォーム</span>
-                        <span className="text-rose-400 group-hover:translate-x-1 transition-transform">→</span>
-                    </a>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <a href="https://docs.google.com/forms/d/1-nGsZEGAMvCSmCXEieT2exjsbRpRnBj052TzrV0CRKY/viewform?edit_requested=true#responses"
+                            target="_blank" className="p-3 bg-rose-50 border border-rose-100 rounded-2xl text-center text-[13px] font-bold text-rose-700 hover:bg-rose-100 transition-all leading-tight flex items-center justify-center animate-pulse">📋 自社分割</a>
+                        <a href="https://docs.google.com/forms/d/e/1FAIpQLSefvBnWhKXg27qsd2Z8jmtzk47uhUBbNQ668_YVIxbj1Am51Q/viewform"
+                            target="_blank" className="p-3 bg-teal-50 border border-teal-100 rounded-2xl text-center text-[13px] font-bold text-teal-700 hover:bg-teal-100 transition-all leading-tight flex items-center justify-center">🏦 銀振明細添付</a>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
                         <a href="https://docs.google.com/forms/d/e/1FAIpQLSc9DHb7GmOUugQyaZJmbZm4rAhKb1w0H2wQ_iVXTPGZqDsD_g/viewform"
-                            target="_blank" className="p-3 bg-blue-50 border border-blue-100 rounded-2xl text-center text-[13px] font-bold text-blue-700 hover:bg-blue-100 transition-all leading-tight">📧 郵送依頼<br />（個人）</a>
+                            target="_blank" className="p-3 bg-blue-50 border border-blue-100 rounded-2xl text-center text-[13px] font-bold text-blue-700 hover:bg-blue-100 transition-all leading-tight flex items-center justify-center">📧 郵送依頼(個)</a>
                         <a href="https://docs.google.com/forms/d/e/1FAIpQLSdD7Nhg0cg3JQna_sH7Y5-4pstIrCN442qypRygxgs3CM_gXQ/viewform"
-                            target="_blank" className="p-3 bg-purple-50 border border-purple-100 rounded-2xl text-center text-[13px] font-bold text-purple-700 hover:bg-purple-100 transition-all leading-tight">🏢 郵送依頼<br />（法人）</a>
+                            target="_blank" className="p-3 bg-purple-50 border border-purple-100 rounded-2xl text-center text-[13px] font-bold text-purple-700 hover:bg-purple-100 transition-all leading-tight flex items-center justify-center">🏢 郵送依頼(法)</a>
                     </div>
-                    {(paymentMethod.includes('銀振') || paymentMethod.includes('銀行')) && (
-                        <a href="https://docs.google.com/forms/d/e/1FAIpQLSefvBnWhKXg27qsd2Z8jmtzk47uhUBbNQ668_YVIxbj1Am51Q/viewform"
-                            target="_blank" className="p-5 bg-teal-50 border border-teal-100 rounded-2xl text-center text-sm font-bold text-teal-700 hover:bg-teal-100 transition-all">🏦 銀振明細書添付</a>
-                    )}
                 </div>
             </div>
 
