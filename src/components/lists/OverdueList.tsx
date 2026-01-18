@@ -9,6 +9,7 @@ interface OverdueCustomer {
     customerName: string;
     contractDate: string;
     overdueDays: number;
+    unpaidAmount?: number;
 }
 
 const OverdueList: React.FC = () => {
@@ -38,7 +39,7 @@ const OverdueList: React.FC = () => {
         <div className="space-y-4 animate-in fade-in duration-500">
             <div className="flex justify-between items-end px-2">
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                    入金待ち案件 (7日以上経過)
+                    未入金アラート（即時検知）
                 </p>
                 <p className="text-xs text-rose-500 font-black">
                     {overdueCustomers.length} 件のアラート
@@ -51,8 +52,8 @@ const OverdueList: React.FC = () => {
                 ) : (
                     <>
                         {overdueCustomers.map((customer) => (
-                            <div key={customer.id} className="glass-panel p-5 rounded-2xl border-rose-500/10 hover:border-rose-500/30 transition-all flex justify-between items-center group bg-white/80 shadow-sm">
-                                <div className="space-y-1">
+                            <div key={customer.id} className="glass-panel p-5 rounded-2xl border-rose-500/10 hover:border-rose-500/30 transition-all flex justify-between items-center group bg-white/80 shadow-sm relative overflow-hidden">
+                                <div className="space-y-1 relative z-10">
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm font-black text-slate-800 group-hover:text-rose-600 transition-colors">
                                             {customer.customerName}
@@ -61,19 +62,25 @@ const OverdueList: React.FC = () => {
                                             ID: {customer.id}
                                         </span>
                                     </div>
-                                    <p className="text-[10px] text-slate-500 font-medium tracking-tight">
-                                        契約日: {customer.contractDate}
-                                    </p>
+                                    <div className="flex items-center gap-3">
+                                        <p className="text-[10px] text-slate-500 font-medium tracking-tight">
+                                            契約日: {customer.contractDate}
+                                        </p>
+                                        <p className="text-[10px] text-rose-600 font-black tracking-tight bg-rose-50 px-1.5 rounded">
+                                            未入金: ¥{customer.unpaidAmount?.toLocaleString()}
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div className="text-right">
-                                    <div className="text-rose-500 font-black text-lg tracking-tighter">
+                                <div className="text-right relative z-10">
+                                    <div className="text-rose-500 font-black text-lg tracking-tighter leading-tight">
                                         {customer.overdueDays} <span className="text-[10px] uppercase">Days</span>
                                     </div>
                                     <p className="text-[9px] text-slate-600 font-bold uppercase tracking-tighter">
-                                        Overdue
+                                        放置期間
                                     </p>
                                 </div>
+                                <div className="absolute top-0 right-0 h-full w-1 bg-rose-500/20 group-hover:bg-rose-500 transition-all"></div>
                             </div>
                         ))}
 
