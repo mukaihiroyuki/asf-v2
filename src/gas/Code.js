@@ -24,10 +24,8 @@ function findColIndex(headers, possibleNames) {
   if (!headers) return -1;
   const h = headers.map(v => String(v || '').trim());
   for (const name of possibleNames) {
-    // 完全一致をまず探す
     const idx = h.indexOf(name);
     if (idx !== -1) return idx;
-    // 部分一致
     for (let i = 0; i < h.length; i++) {
       if (h[i].includes(name)) return i;
     }
@@ -35,22 +33,38 @@ function findColIndex(headers, possibleNames) {
   return -1;
 }
 
+// FIX: Added missing helper function
+function getSheetFuzzy(ss, name) {
+  if (!ss) return null;
+  const direct = ss.getSheetByName(name);
+  if (direct) return direct;
+  const sheets = ss.getSheets();
+  for (const s of sheets) {
+    if (s.getName().replace(/\s/g, '').includes(name.replace(/\s/g, ''))) return s;
+  }
+  return null;
+}
+
 /**
  * 【決定版】個別シート（顧客リスト）からデータを確実に吸い上げるぜ相棒！
+ * Debug v503: Returns logs in UI if empty
  */
 function getCustomerList(spreadsheetId, providedStaffName, providedSs, targetGid) {
-  console.log(`[Start getCustomerList] SS_ID: ${spreadsheetId}, Staff: ${providedStaffName}, GID: ${targetGid}`);
+  const debugLogs = [];
+  const log = (msg) => { debugLogs.push(String(msg)); };
+
+  log(`[Start v503] Staff: ${providedStaffName}`);
+
   const ss = providedSs || openSsSafely(spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
   let staffName = providedStaffName;
   if (!staffName) staffName = getStaffInfoBySheetId(spreadsheetId, ss).name;
 
-  const cacheKey = 'customer_list_v501_' + spreadsheetId; // 501回目の正直！
+  const cacheKey = 'customer_list_v503_' + spreadsheetId;
   const cache = CacheService.getUserCache();
-  const cached = cache.get(cacheKey);
-  if (cached) {
-    console.log('[Cache Hit] Returning cached list');
-    try { return JSON.parse(cached); } catch (e) { }
-  }
+
+  // Cache disabled for debugging
+  // const cached = cache.get(cacheKey);
+  // if (cached) { try { return JSON.parse(cached); } catch (e) { } }
 
   const customers = [];
   const processedIds = new Set();
@@ -61,105 +75,64 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs, targetGid
 
     if (targetGid) {
       const gidS = ss.getSheets().find(sh => String(sh.getSheetId()) === String(targetGid));
-      if (gidS && targetSheets.indexOf(gidS) === -1) {
-        console.log(`[Adding GID Sheet] Found sheet by GID: ${gidS.getName()}`);
-        targetSheets.push(gidS);
-      }
+      if (gidS && targetSheets.indexOf(gidS) === -1) targetSheets.push(gidS);
     }
 
-    // シートが見つからない場合、全スキャン
     if (targetSheets.length === 0) {
-      console.warn('[No Sheets Found by Name/GID] Attempting full SS scan...');
+      log('Warn: No named sheets found. Scanning all...');
       for (const sh of ss.getSheets()) {
         const hVal = sh.getRange(1, 1, 2, 5).getValues().map(r => r.join('')).join('');
         if (hVal.includes('\u9762\u8ac7ID')) targetSheets.push(sh);
       }
     }
 
-    console.log(`[Target Sheets] ${targetSheets.map(s => s.getName()).join(', ')}`);
+    log(`Sheets found: ${targetSheets.length}`);
 
     for (const s of targetSheets) {
       const lastRow = s.getLastRow();
-      const sName = s.getName();
-      if (lastRow <= 1) {
-        console.log(`[Skipping ${sName}] lastRow: ${lastRow}`);
-        continue;
-      }
+      if (lastRow <= 1) { log(`Skip ${s.getName()} (empty)`); continue; }
 
       const fetchCount = 600;
       const startRow = Math.max(1, lastRow - fetchCount + 1);
       const sData = s.getRange(startRow, 1, Math.min(fetchCount, lastRow), s.getLastColumn()).getValues();
       const hData = s.getRange(1, 1, 2, s.getLastColumn()).getValues();
 
-      // ヘッダー判定
       let headers = hData[1].join('').includes('\u9762\u8ac7ID') ? hData[1] : hData[0];
       let dataStartIdx = (startRow === 1) ? (hData[1].join('').includes('\u9762\u8ac7ID') ? 2 : 1) : 0;
 
       const colId = findColIndex(headers, ['\u9762\u8ac7ID', 'ID']);
-      if (colId === -1) {
-        console.warn(`[Header Failed in ${sName}] Headers read: ${JSON.stringify(headers)}`);
-        continue;
-      }
+      const colName = findColIndex(headers, ['\u540d\u524d', '\u6c0f\u540d']);
 
-      const colNameF = findColIndex(headers, ['\u540d\u524d', '\u6c0f\u540d']);
-      const colLineC = findColIndex(headers, ['LINE\u540d', 'LINE\u30cd\u30fc\u30e0']);
-      const colStatus = findColIndex(headers, ['\u7d50\u679c', '\u30b9\u30c6\u30fc\u30bf\u30b9']);
-      const colDate = findColIndex(headers, ['\u9762\u8ac7\u65e5', '\u65e5\u4ed8']);
+      log(`[${s.getName()}] ID:${colId} Name:${colName}`);
 
-      console.log(`[Parsing ${sName}] ID_Col: ${colId}, NameF_Col: ${colNameF}, LineC_Col: ${colLineC}`);
+      if (colId === -1) continue;
 
       const gid = s.getSheetId();
-
       for (let j = sData.length - 1; j >= dataStartIdx; j--) {
         const row = sData[j];
         const valId = String(row[colId] || '').trim();
         if (valId && valId !== '' && valId !== '\u9762\u8ac7ID' && valId !== 'ID' && !processedIds.has(valId)) {
-          const finalName = String(row[colNameF] || row[colLineC] || '(\u540d\u524d\u306a\u3057)').trim();
+          // BYPASS FILTER STRICTLY (ALL DATA)
           customers.push({
-            id: valId, name: finalName, link: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${gid}&range=${startRow + j}:${startRow + j}`,
-            status: colStatus !== -1 ? String(row[colStatus]) : '',
-            date: (colDate !== -1 && row[colDate] instanceof Date) ? Utilities.formatDate(row[colDate], 'Asia/Tokyo', 'yyyy/MM/dd') : (colDate !== -1 ? String(row[colDate]) : ''),
-            source: 'individual'
+            id: valId,
+            name: String(row[colName] || '名無し'),
+            link: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${gid}&range=${startRow + j}:${startRow + j}`,
+            status: '', date: ''
           });
           processedIds.add(valId);
         }
       }
-      console.log(`[Success ${sName}] Extracted ${customers.length} records so far.`);
     }
-  } catch (e) { console.error('[Individual Loop Error] ' + e.toString()); }
+  } catch (e) { log(`Error: ${e.toString()}`); }
 
-  try {
-    const masterSs = openSsSafely(DATA_MASTER_SPREADSHEET_ID, '\u5408\u7b97\u30de\u30b9\u30bf');
-    const interviewSheet = masterSs.getSheetByName(SHEET_ALL_INTERVIEWS);
-    if (interviewSheet) {
-      const lastRow = interviewSheet.getLastRow();
-      const readStart = Math.max(1, lastRow - 310 + 1);
-      const data = interviewSheet.getRange(readStart, 1, Math.min(310, lastRow), interviewSheet.getLastColumn()).getValues();
-      const hData = interviewSheet.getRange(1, 1, 2, interviewSheet.getLastColumn()).getValues();
-      let headers = hData[1].join('').includes('\u9762\u8ac7ID') ? hData[1] : hData[0];
-      let offset = (readStart === 1) ? (hData[1].join('').includes('\u9762\u8ac7ID') ? 2 : 1) : 0;
-      const colId = findColIndex(headers, ['\u9762\u8ac7ID', 'ID']);
-      const colName = findColIndex(headers, ['LINE\u540d', '\u540d\u524d', '\u6c0f\u540d']);
-      const colStaff = findColIndex(headers, ['\u55b6\u696d\u62c5\u5f53\u8005', '\u55b6\u696d\u62c5\u5f53']);
-      const colStatus = findColIndex(headers, ['\u7d50\u679c', '\u30b9\u30c6\u30fc\u30bf\u30b9']);
-      const colDate = findColIndex(headers, ['\u9762\u8ac7\u65e5', '\u65e5\u4ed8']);
-      for (let i = data.length - 1; i >= offset; i--) {
-        const row = data[i];
-        const valId = String(row[colId] || '').trim();
-        if (!valId || valId === '' || valId === '\u9762\u8ac7ID' || processedIds.has(valId)) continue;
-        if (staffName && colStaff !== -1) {
-          if (String(row[colStaff]).normalize('NFKC').replace(/\s/g, '') !== String(staffName).normalize('NFKC').replace(/\s/g, '')) continue;
-        }
-        customers.push({
-          id: valId, name: colName !== -1 ? String(row[colName]).trim() : '(\u540d\u524d\u306a\u3057)', link: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`,
-          status: colStatus !== -1 ? String(row[colStatus]) : '',
-          date: (colDate !== -1 && row[colDate] instanceof Date) ? Utilities.formatDate(row[colDate], 'Asia/Tokyo', 'yyyy/MM/dd') : (colDate !== -1 ? String(row[colDate]) : ''),
-          source: 'master_slice'
-        });
-        processedIds.add(valId);
-      }
-    }
-  } catch (e) { console.error(e); }
+  // IF NO CUSTOMERS, RETURN LOGS
+  if (customers.length === 0) {
+    customers.push({ id: 'DBG0', name: '⚠️ デバッグモード v503', link: '' });
+    debugLogs.forEach((l, i) => {
+      customers.push({ id: `LOG${i}`, name: l.substring(0, 100), link: '' });
+    });
+  }
+
   cache.put(cacheKey, JSON.stringify(customers), 21600);
   return customers;
 }
