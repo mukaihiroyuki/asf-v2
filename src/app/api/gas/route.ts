@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzChwvkRazhTt8PcaQaq2_eT_Q98v1gllHSzZxE2SXF455XUViLfKuLcuNEIfJ9Rrv--/exec';
-// 最新デプロイID (Tokyo Fix Final): AKfycbzChwvkRazhTt8PcaQaq2_eT_Q98v1gllHSzZxE2SXF455XUViLfKuLcuNEIfJ9Rrv--
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzChwvkRazhTt8PcaQaq2_eT_Q98v1gllHSzZxE2SXF45XUViLfKuLcuNEIfJ9Rrv--/exec';
+// 最新デプロイID (Tokyo Fix Final - Corrected): AKfycbzChwvkRazhTt8PcaQaq2_eT_Q98v1gllHSzZxE2SXF45XUViLfKuLcuNEIfJ9Rrv--
 
 export async function POST(request: Request) {
     try {

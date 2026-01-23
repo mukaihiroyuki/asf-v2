@@ -158,21 +158,10 @@ function doOptions(e) {
 }
 
 /**
- * 旧アプリUI封鎖（Webアプリとして踏んだ場合は移行案内を出す）
+ * 旧アプリUI封鎖（Webアプリとして踏んだ場合は案内を出す...のはやめて、APIとして専念する！）
  */
 function doGet() {
-  return HtmlService.createHtmlOutput(
-    "<div style='font-family:sans-serif; text-align:center; padding:50px; background:#f8f9fa; min-height:100vh;'>" +
-    "<div style='background:white; display:inline-block; padding:40px; border-radius:166px; box-shadow:0 10px 40px rgba(231,76,60,0.15); border:4px solid #e74c3c;'>" +
-    "<h1 style='color:#e74c3c; margin-bottom:20px; font-size:2.5rem;'>🚀 ASF 2.0 へ移行完了！</h1>" +
-    "<p style='font-size:1.3rem; color:#333; line-height:1.8; font-weight:bold;'>" +
-    "この旧バージョンのアプリ画面は終了しました。<br>" +
-    "爆速・高機能な <b>新しい営業報告アプリ</b> を使用してください。</p>" +
-    "<div style='background:#fef5f5; padding:20px; border-radius:12px; margin-top:30px; border-left:8px solid #e74c3c;'>" +
-    "<p style='color:#c0392b; margin:0; font-size:1.1rem;'>※担当者から配布された最新のVercelリンク、<br>またはブックマークからアクセスしてください。</p>" +
-    "</div></div></div>"
-  ).setTitle("ASF 2.0 - 移行完了のお知らせ")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  return HtmlService.createHtmlOutput("ASF 2.0 API is Running.");
 }
 
 /**
