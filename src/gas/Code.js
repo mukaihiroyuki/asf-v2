@@ -2,19 +2,19 @@
 // ASF 2.0 Global Settings
 // ========================================
 
-// 1. スプレッドシートID (全情報を1つのマスタへ集約！)
-const DATA_MASTER_SPREADSHEET_ID = '1xnN8CSq-9DyyhwJZayHkoJKBkcR9nGRZEsSr_r6SLfg'; // 合算マスタ (全情報の核)
-const AUTH_MASTER_SPREADSHEET_ID = DATA_MASTER_SPREADSHEET_ID; // 認証情報もここに統合だぜ相棒！
+// 1. \u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8ID (\u5168\u60c5\u5831\u30921\u3064\u306e\u30de\u30b9\u30bf\u3078\u96c6\u7d04\uff01)
+const DATA_MASTER_SPREADSHEET_ID = '1xnN8CSq-9DyyhwJZayHkoJKBkcR9nGRZEsSr_r6SLfg'; // \u5408\u7b97\u30de\u30b9\u30bf (\u5168\u60c5\u5831\u306e\u6838)
+const AUTH_MASTER_SPREADSHEET_ID = DATA_MASTER_SPREADSHEET_ID; // \u8a8d\u8a3c\u60c5\u5831\u3082\u3053\u3053\u306b\u7d71\u5408\u3060\u305c\u76f8\u68d2\uff01
 
-// 2. シート名
-const SHEET_ALL_INTERVIEWS = '全面談合算';
-const SHEET_ALL_PAYMENTS = '全入金合算';
-const SHEET_CUSTOMER_LIST = '顧客リスト';
-const SHEET_PAYMENT_LIST = '入金管理リスト';
-const SHEET_DROPDOWN = 'プルダウン';
-const SHEET_MASTER_DROPDOWN = 'master_dropdown'; // ← 新設マスタ！
+// 2. \u30b7\u30fc\u30c8\u540d
+const SHEET_ALL_INTERVIEWS = '\u5168\u9762\u8ac7\u5408\u7b97';
+const SHEET_ALL_PAYMENTS = '\u5168\u5165\u91d1\u5408\u7b97';
+const SHEET_CUSTOMER_LIST = '\u9867\u5ba2\u30ea\u30b9\u30c8';
+const SHEET_PAYMENT_LIST = '\u5165\u91d1\u7ba1\u7406\u30ea\u30b9\u30c8';
+const SHEET_DROPDOWN = '\u30d7\u30eb\u30c0\u30a6\u30f3';
+const SHEET_MASTER_DROPDOWN = 'master_dropdown'; // \u2190 \u65b0\u8a2d\u30de\u30b9\u30bf\uff01
 const SHEET_PLAN_MASTER = 'plan_master';
-const AUTH_MASTER_SHEET_NAME = '面談シート一覧';
+const AUTH_MASTER_SHEET_NAME = '\u9762\u8ac7\u30b7\u30fc\u30c8\u4e00\u89a7';
 
 /**
  * IDチェック付きで安全にスプレッドシートを開くヘルパー
@@ -22,13 +22,13 @@ const AUTH_MASTER_SHEET_NAME = '面談シート一覧';
 function openSsSafely(id, label) {
   const cleanId = id ? String(id).trim() : '';
   if (!cleanId) {
-    throw new Error(`${label || 'スプレッドシート'}のIDが空だぜ。マスタの設定を確認してくれ！`);
+    throw new Error(`${label || '\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8'}\u306eID\u304c\u7a7a\u3060\u305c\u3002\u30de\u30b9\u30bf\u306e\u8a2d\u5aea\u3092\u78ba\u8a8d\u3057\u3066\u304f\u308c\uff01`);
   }
   try {
     return SpreadsheetApp.openById(cleanId);
   } catch (e) {
     console.error(`[CRITICAL ERROR] ${label} (ID: ${cleanId}) を開けませんでした。エラー詳細: ${e.toString()}`);
-    throw new Error(`${label || 'スプレッドシート'} (ID: ${cleanId}) を開けなかったぜ。権限かIDが間違ってる可能性があるな。`);
+    throw new Error(`${label || '\u30b9\u30d7\u30ec\u30c3\u30c9\u30b7\u30fc\u30c8'} (ID: ${cleanId}) \u3092\u958b\u3051\u306a\u304b\u3063\u305f\u305c\u3002\u6a29\u9650\u304bID\u304c\u9593\u9055\u3063\u3066\u304b\u308b\u53ef\u80fd\u6027\u304c\u3042\u308b\u306a\u3002`);
   }
 }
 
@@ -72,15 +72,15 @@ function getHeadersAndData(sheet) {
   const allValues = sheet.getRange(1, 1, Math.min(sheet.getLastRow(), 100), sheet.getLastColumn()).getValues();
   if (allValues.length === 0) return { headers: [], dataStartRow: 0, colId: -1 };
 
-  // 1行目か2行目から「面談ID」を探す
+  // 1\u884c\u76ee\u304b2\u884c\u76ee\u304b\u3089\u300c\u9762\u8ac7ID\u300d\u3092\u63a2\u3059
   let headers = allValues[0];
   let dataStartRow = 1;
-  let colId = headers.indexOf('面談ID');
+  let colId = headers.indexOf('\u9762\u8ac7ID');
 
   if (colId === -1 && allValues[1]) {
     headers = allValues[1];
     dataStartRow = 2;
-    colId = headers.indexOf('面談ID');
+    colId = headers.indexOf('\u9762\u8ac7ID');
   }
 
   return { headers, dataStartRow, colId };
@@ -144,7 +144,7 @@ function doPost(e) {
     console.error('API Error: ' + error.toString());
     return ContentService.createTextOutput(JSON.stringify({
       success: false,
-      message: "【ASF 2.0 API】" + error.toString()
+      message: "[\u30a2 Addness ASF 2.0 API]" + error.toString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
 }
@@ -174,7 +174,7 @@ function getStaffNameBySheetId(targetSheetId, providedSs) {
   if (cached) return cached;
 
   try {
-    const ss = providedSs || openSsSafely(AUTH_MASTER_SPREADSHEET_ID, '認証マスタ');
+    const ss = providedSs || openSsSafely(AUTH_MASTER_SPREADSHEET_ID, '\u8a8d\u8a3c\u30de\u30b9\u30bf');
     const sheet = ss.getSheetByName(AUTH_MASTER_SHEET_NAME);
     const data = sheet.getDataRange().getValues();
 
@@ -205,7 +205,7 @@ function getStaffNameBySheetId(targetSheetId, providedSs) {
  * ★パフォーマンス最適化：スプシオープン回数を最小化
  */
 function getInitialData(spreadsheetId) {
-  const ss = openSsSafely(spreadsheetId, '個別シート');
+  const ss = openSsSafely(spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
   const staffName = getStaffNameBySheetId(spreadsheetId, ss);
 
   // マスタドロップダウンを一括取得（爆速キャッシュ対応）
@@ -233,7 +233,7 @@ function getMasterDropdowns() {
   }
 
   try {
-    const ss = openSsSafely(DATA_MASTER_SPREADSHEET_ID, '合算マスタ');
+    const ss = openSsSafely(DATA_MASTER_SPREADSHEET_ID, '\u5408\u7b97\u30de\u30b9\u30bf');
     const sheet = ss.getSheetByName(SHEET_MASTER_DROPDOWN);
     if (!sheet) throw new Error('master_dropdownシートが見つかりません');
 
@@ -270,7 +270,7 @@ function getMasterDropdowns() {
  * 個別シート優先＆マスタ後方スライスによる爆速顧客リスト取得
  */
 function getCustomerList(spreadsheetId, providedStaffName, providedSs) {
-  const ss = providedSs || openSsSafely(spreadsheetId, '個別シート');
+  const ss = providedSs || openSsSafely(spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
   const staffName = providedStaffName || getStaffNameBySheetId(spreadsheetId, ss);
 
   // 0. キャッシュチェック
@@ -289,7 +289,7 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs) {
   try {
     const targetSheets = [
       getSheetFuzzy(ss, SHEET_CUSTOMER_LIST),
-      getSheetFuzzy(ss, '面談記入'),
+      getSheetFuzzy(ss, '\u9762\u8ac7\u8a18\u5165'),
       getSheetFuzzy(ss, SHEET_PAYMENT_LIST)
     ].filter(s => s !== null);
 
@@ -307,26 +307,26 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs) {
       const headerRows = s.getRange(1, 1, 2, s.getLastColumn()).getValues();
       let sHeaders = headerRows[0];
       let dataStartRowRelativeToSlice = (startRow === 1) ? 1 : 0;
-      let sColId = findColIndex(sHeaders, ['面談ID', 'interview_id', 'ID']);
+      let sColId = findColIndex(sHeaders, ['\u9762\u8ac7ID', 'interview_id', 'ID']);
 
-      // 1行目に「面談ID」がない場合、2行目もチェック
+      // 1\u884c\u76ee\u306b\u300c\u9762\u8ac7ID\u300d\u304c\u306a\u3044\u5834\u5408\u30012\u884c\u76ee\u3082\u30c1\u30a7\u30c3\u30af
       if (sColId === -1 && headerRows[1]) {
         sHeaders = headerRows[1];
         dataStartRowRelativeToSlice = (startRow <= 2) ? 2 - startRow + 1 : 0;
-        sColId = findColIndex(sHeaders, ['面談ID', 'interview_id', 'ID']);
+        sColId = findColIndex(sHeaders, ['\u9762\u8ac7ID', 'interview_id', 'ID']);
       }
 
       // --- マスター（全面談合算）が2段ヘッダーだった場合の念押し対応 ---
       // ※現状は1行目固定だが見つからない場合は2行目も見るぜ
       if (sColId === -1 && sData.length > 2) {
         sHeaders = sData[0]; // スライス内にヘッダーが含まれる場合
-        sColId = findColIndex(sHeaders, ['面談ID', 'interview_id', 'ID']);
+        sColId = findColIndex(sHeaders, ['\u9762\u8ac7ID', 'interview_id', 'ID']);
       }
       // --------------------------------------------------
 
-      const sColName = findColIndex(sHeaders, ['LINE名', '名前', '氏名', '顧客名', '契約名義']);
-      const sColStatus = findColIndex(sHeaders, ['結果', 'ステータス', 'status']);
-      const sColDate = findColIndex(sHeaders, ['面談日', '日付', 'date']);
+      const sColName = findColIndex(sHeaders, ['LINE\u540d', '\u540d\u524d', '\u6c0f\u540d', '\u9867\u5ba2\u540d', '\u5951\u7d04\u540d\u7fa9']);
+      const sColStatus = findColIndex(sHeaders, ['\u7d50\u679c', '\u30b9\u30c6\u30fc\u30bf\u30b9', 'status']);
+      const sColDate = findColIndex(sHeaders, ['\u9762\u8ac7\u65e5', '\u65e5\u4ed8', 'date']);
 
       const targetCol = sColId !== -1 ? sColId : 0;
       const currentGid = s.getSheetId();
@@ -361,7 +361,7 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs) {
 
   // 2. 合算マスタの最新300行をスキャ
   try {
-    const masterSs = openSsSafely(DATA_MASTER_SPREADSHEET_ID, '合算マスタ');
+    const masterSs = openSsSafely(DATA_MASTER_SPREADSHEET_ID, '\u5408\u7b97\u30de\u30b9\u30bf');
     const interviewSheet = masterSs.getSheetByName(SHEET_ALL_INTERVIEWS);
     if (!interviewSheet) throw new Error('Master sheet not found: ' + SHEET_ALL_INTERVIEWS);
     const lastRow = interviewSheet.getLastRow();
@@ -372,22 +372,21 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs) {
       const range = interviewSheet.getRange(startRow, 1, Math.min(fetchCount, lastRow), interviewSheet.getLastColumn());
       const interviewData = range.getValues();
 
-      // 合算マスタのヘッダー特定 (2段ヘッダー対応)
       const masterHeadersRows = interviewSheet.getRange(1, 1, 2, interviewSheet.getLastColumn()).getValues();
       let headers = masterHeadersRows[0];
       let dataOffset = (startRow === 1) ? 1 : 0;
-      let colId = findColIndex(headers, ['面談ID', 'interview_id', 'ID']);
+      let colId = findColIndex(headers, ['\u9762\u8ac7ID', 'interview_id', 'ID']);
 
       if (colId === -1 && masterHeadersRows[1]) {
         headers = masterHeadersRows[1];
         dataOffset = (startRow <= 2) ? 2 - startRow + 1 : 0;
-        colId = findColIndex(headers, ['面談ID', 'interview_id', 'ID']);
+        colId = findColIndex(headers, ['\u9762\u8ac7ID', 'interview_id', 'ID']);
       }
 
-      const colName = findColIndex(headers, ['LINE名', '名前', '氏名', '顧客名']);
-      const colStaff = findColIndex(headers, ['営業担当', '担当者', 'sales_staff', '担当']);
-      const colStatus = findColIndex(headers, ['結果', 'ステータス', 'status']);
-      const colDate = findColIndex(headers, ['面談日', '日付', 'date']);
+      const colName = findColIndex(headers, ['LINE\u540d', '\u540d\u524d', '\u6c0f\u540d', '\u9867\u5ba2\u540d']);
+      const colStaff = findColIndex(headers, ['\u55b6\u696d\u62c5\u5f53', '\u62c5\u5f53\u8005', 'sales_staff', '\u62c5\u5f53']);
+      const colStatus = findColIndex(headers, ['\u7d50\u679c', '\u30b9\u30c6\u30fc\u30bf\u30b9', 'status']);
+      const colDate = findColIndex(headers, ['\u9762\u8ac7\u65e5', '\u65e5\u4ed8', 'date']);
 
       for (let i = interviewData.length - 1; i >= dataOffset; i--) {
         const row = interviewData[i];
@@ -443,11 +442,11 @@ function getPaymentCustomerList(spreadsheetId, providedSs) {
   let headers = headerRows[0].map(String);
   let headers2 = headerRows[1] ? headerRows[1].map(String) : [];
 
-  let colId = findColIndex(headers, ['面談ID', 'ID']);
-  if (colId === -1) colId = findColIndex(headers2, ['面談ID', 'ID']);
+  let colId = findColIndex(headers, ['\u9762\u8ac7ID', 'ID']);
+  if (colId === -1) colId = findColIndex(headers2, ['\u9762\u8ac7ID', 'ID']);
 
-  let colName = findColIndex(headers, ['契約名義', '名前', '顧客名']);
-  if (colName === -1) colName = findColIndex(headers2, ['契約名義', '名前', '顧客名']);
+  let colName = findColIndex(headers, ['\u5951\u7d04\u540d\u7fa9', '\u540d\u524d', '\u9867\u5ba2\u540d']);
+  if (colName === -1) colName = findColIndex(headers2, ['\u5951\u7d04\u540d\u7fa9', '\u540d\u524d', '\u9867\u5ba2\u540d']);
 
   if (colId === -1 || colName === -1) {
     console.warn(`[getPaymentCustomerList] 必要な列が見つかりません。 colId:${colId}, colName:${colName}`);
@@ -486,7 +485,7 @@ function getOverduePaymentList(spreadsheetId) {
     try { return JSON.parse(cached); } catch (e) { }
   }
 
-  const ss = openSsSafely(spreadsheetId, '個別シート');
+  const ss = openSsSafely(spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
   const paymentSheet = ss.getSheetByName(SHEET_PAYMENT_LIST);
   const paymentData = paymentSheet.getDataRange().getValues();
   if (paymentData.length <= 1) return [];
@@ -497,7 +496,7 @@ function getOverduePaymentList(spreadsheetId) {
   const statusMap = {};
   customerListRecent.forEach(c => { statusMap[c.id] = c.status; });
 
-  const INCLUDED_STATUSES = ['成約', '契約済み(入金待ち)'];
+  const INCLUDED_STATUSES = ['\u6210\u7d04', '\u5951\u7d04\u6e08\u307f(\u5165\u91d1\u5f85\u3061)'];
   const today = new Date();
   const OVERDUE_DAYS = 0; // 0日に設定して即座にアラートだぜ！
   const overdueList = [];
@@ -555,7 +554,7 @@ function getPlanList() {
     try { return JSON.parse(cached); } catch (e) { }
   }
 
-  const ss = openSsSafely(AUTH_MASTER_SPREADSHEET_ID, '認証マスタ');
+  const ss = openSsSafely(AUTH_MASTER_SPREADSHEET_ID, '\u8a8d\u8a3c\u30de\u30b9\u30bf');
   const sheet = ss.getSheetByName(SHEET_PLAN_MASTER);
   const data = sheet.getDataRange().getValues();
 
@@ -596,7 +595,7 @@ function getPlanList() {
  */
 function submitReport(formData) {
   try {
-    const ss = openSsSafely(formData.spreadsheetId, '個別シート');
+    const ss = openSsSafely(formData.spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
     const sheet = ss.getSheetByName(SHEET_PAYMENT_LIST);
 
     console.log('Form data: ' + JSON.stringify(formData));
@@ -645,7 +644,7 @@ function submitReport(formData) {
       sheet.getRange(targetRow, 2).setNote(formData.notes.trim());
     }
 
-    const message = isUpdate ? '報告を更新しました！' : '報告が完了しました！';
+    const message = isUpdate ? '\u5831\u544a\u3092\u66f4\u65b0\u3057\u307e\u3057\u305f\uff01' : '\u5831\u544a\u304c\u5b8c\u4e86\u3057\u307e\u3057\u305f\uff01';
 
     // ★キャッシュ破棄（送信後は最新データを見せたいぜ！）
     try {
@@ -659,7 +658,7 @@ function submitReport(formData) {
 
   } catch (error) {
     console.error('Error: ' + error.toString());
-    return { success: false, message: 'エラー: ' + error.toString() };
+    return { success: false, message: '\u30a8\u30e9\u30fc: ' + error.toString() };
   }
 }
 
@@ -674,7 +673,7 @@ function getPaymentMethodsH(spreadsheetId, providedSs) {
  */
 function submitPayment(formData) {
   try {
-    const ss = openSsSafely(formData.spreadsheetId, '個別シート');
+    const ss = openSsSafely(formData.spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
     const sheet = ss.getSheetByName(SHEET_PAYMENT_LIST);
 
     console.log('Payment data: ' + JSON.stringify(formData));
@@ -733,11 +732,11 @@ function submitPayment(formData) {
       cache.remove('overdue_list_' + formData.spreadsheetId);
     } catch (e) { }
 
-    return { success: true, message: '入金報告が完了しました！' };
+    return { success: true, message: '\u5165\u91d1\u5831\u544a\u304c\u5b8c\u4e86\u3057\u307e\u3057\u305f\uff01' };
 
   } catch (error) {
     console.error('Error: ' + error.toString());
-    return { success: false, message: 'エラー: ' + error.toString() };
+    return { success: false, message: '\u30a8\u30e9\u30fc: ' + error.toString() };
   }
 }
 
@@ -752,7 +751,7 @@ function submitPayment(formData) {
  * GASエディタから手動で1回実行する用
  */
 function generatePINs() {
-  const ss = openSsSafely(AUTH_MASTER_SPREADSHEET_ID, '認証マスタ');
+  const ss = openSsSafely(AUTH_MASTER_SPREADSHEET_ID, '\u8a8d\u8a3c\u30de\u30b9\u30bf');
   const sheet = ss.getSheetByName(AUTH_MASTER_SHEET_NAME);
   const lastRow = sheet.getLastRow();
 
@@ -795,7 +794,7 @@ function generatePINs() {
  */
 function authenticateByPIN(pin) {
   try {
-    const ss = openSsSafely(AUTH_MASTER_SPREADSHEET_ID, '認証マスタ');
+    const ss = openSsSafely(AUTH_MASTER_SPREADSHEET_ID, '\u8a8d\u8a3c\u30de\u30b9\u30bf');
     const sheet = ss.getSheetByName(AUTH_MASTER_SHEET_NAME);
     const data = sheet.getDataRange().getValues();
 
