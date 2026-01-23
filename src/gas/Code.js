@@ -105,7 +105,7 @@ function doPost(e) {
         result = authenticateByPIN(params.pin);
         break;
       case 'getInitialData':
-        result = getInitialData(params.spreadsheetId, ss);
+        result = getInitialData(params.spreadsheetId, params.staffName, ss);
         break;
       case 'getCustomerList':
         result = getCustomerList(params.spreadsheetId, null, ss);
@@ -204,9 +204,9 @@ function getStaffNameBySheetId(targetSheetId, providedSs) {
  * 初期表示に必要な全データを一括取得するバルクローダー
  * ★パフォーマンス最適化：スプシオープン回数を最小化
  */
-function getInitialData(spreadsheetId) {
-  const ss = openSsSafely(spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
-  const staffName = getStaffNameBySheetId(spreadsheetId, ss);
+function getInitialData(spreadsheetId, providedStaffName, providedSs) {
+  const ss = providedSs || openSsSafely(spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
+  const staffName = providedStaffName || getStaffNameBySheetId(spreadsheetId, ss);
 
   // マスタドロップダウンを一括取得（爆速キャッシュ対応）
   const masters = getMasterDropdowns();
@@ -214,6 +214,7 @@ function getInitialData(spreadsheetId) {
   return {
     customerList: getCustomerList(spreadsheetId, staffName, ss),
     paymentCustomerList: getPaymentCustomerList(spreadsheetId, ss),
+    // ...
     planList: getPlanList(),
     paymentMethods: masters.paymentMethods,  // マスタ（B列）から取得
     paymentMethodsH: masters.paymentGrouping, // A列は予備へ

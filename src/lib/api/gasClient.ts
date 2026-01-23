@@ -62,8 +62,8 @@ export const gasApi = {
     getPlanList: () =>
         callGasApi('getPlanList'),
 
-    getInitialData: (spreadsheetId: string) =>
-        callGasApi('getInitialData', { spreadsheetId }),
+    getInitialData: (spreadsheetId: string, staffName?: string) =>
+        callGasApi('getInitialData', { spreadsheetId, staffName }),
 
     getPaymentMethods: (spreadsheetId: string) =>
         callGasApi('getPaymentMethods', { spreadsheetId }),

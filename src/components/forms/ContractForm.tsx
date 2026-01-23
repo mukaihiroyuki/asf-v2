@@ -83,7 +83,7 @@ const ContractForm: React.FC<ContractFormProps> = ({ staffName, spreadsheetId, o
             setError(null);
             try {
                 // バルクローダーで一括取得
-                const data = await gasApi.getInitialData(spreadsheetId);
+                const data = await gasApi.getInitialData(spreadsheetId, staffName);
                 setPlans(data.planList);
                 setAllCustomers(data.customerList);
                 setPaymentMethods(data.paymentMethods);
@@ -171,7 +171,7 @@ const ContractForm: React.FC<ContractFormProps> = ({ staffName, spreadsheetId, o
                             onClick={async () => {
                                 setIsLoading(true);
                                 try {
-                                    const data = await gasApi.getInitialData(spreadsheetId);
+                                    const data = await gasApi.getInitialData(spreadsheetId, staffName);
                                     setPlans(data.planList);
                                     setAllCustomers(data.customerList);
                                     setPaymentMethods(data.paymentMethods);

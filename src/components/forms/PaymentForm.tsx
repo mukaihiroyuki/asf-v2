@@ -31,7 +31,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ staffName, spreadsheetId, onS
         const load = async () => {
             try {
                 // バルクローダーで一括取得
-                const data = await gasApi.getInitialData(spreadsheetId);
+                const data = await gasApi.getInitialData(spreadsheetId, staffName);
                 // 入金報告専用の絞り込みリスト (入金管理リストのみ) を使用
                 setCustomers(data.paymentCustomerList || []);
                 setPaymentMethods(data.paymentMethodsH);
@@ -83,7 +83,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ staffName, spreadsheetId, onS
                             onClick={async () => {
                                 setIsFetching(true);
                                 try {
-                                    const data = await gasApi.getInitialData(spreadsheetId);
+                                    const data = await gasApi.getInitialData(spreadsheetId, staffName);
                                     setCustomers(data.paymentCustomerList || []);
                                     setPaymentMethods(data.paymentMethodsH);
                                     alert('最新データを読み込んだぜ！');
