@@ -166,6 +166,26 @@ const ContractForm: React.FC<ContractFormProps> = ({ staffName, spreadsheetId, o
                 <div className="flex items-center justify-between px-1">
                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">LINE名 検索</label>
                     <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                setIsLoading(true);
+                                try {
+                                    const data = await gasApi.getInitialData(spreadsheetId);
+                                    setPlans(data.planList);
+                                    setAllCustomers(data.customerList);
+                                    setPaymentMethods(data.paymentMethods);
+                                    alert('最新データを読み込んだぜ！');
+                                } catch (err: any) {
+                                    setError(err.message || '再読込に失敗したぜ。');
+                                } finally {
+                                    setIsLoading(false);
+                                }
+                            }}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-premium-gold/30 bg-white text-premium-gold text-[10px] font-black tracking-wider hover:bg-premium-gold hover:text-white transition-all duration-300 shadow-sm"
+                        >
+                            🔄 REFRESH
+                        </button>
                         {interviewId && allCustomers.find(c => c.id === interviewId)?.link && (
                             <a
                                 href={allCustomers.find(c => c.id === interviewId)?.link}

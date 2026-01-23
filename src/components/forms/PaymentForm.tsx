@@ -75,11 +75,32 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ staffName, spreadsheetId, onS
     return (
         <form onSubmit={handleSubmit} className="space-y-6 animate-in fade-in duration-500">
             <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-1">顧客（面談ID / 名前）</label>
-                    {customerId && (
-                        <button type="button" onClick={() => handleCopy(customerId)} className="text-[14px] hover:scale-110 active:scale-95 transition-all opacity-40 hover:opacity-100" title="IDをコピー">📋</button>
-                    )}
+                <div className="flex items-center justify-between px-1">
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">顧客（面談ID / 名前）</label>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                setIsFetching(true);
+                                try {
+                                    const data = await gasApi.getInitialData(spreadsheetId);
+                                    setCustomers(data.paymentCustomerList || []);
+                                    setPaymentMethods(data.paymentMethodsH);
+                                    alert('最新データを読み込んだぜ！');
+                                } catch (err: any) {
+                                    alert('再読込に失敗したぜ。');
+                                } finally {
+                                    setIsFetching(false);
+                                }
+                            }}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-premium-gold/30 bg-white text-premium-gold text-[10px] font-black tracking-wider hover:bg-premium-gold hover:text-white transition-all duration-300 shadow-sm"
+                        >
+                            🔄 REFRESH
+                        </button>
+                        {customerId && (
+                            <button type="button" onClick={() => handleCopy(customerId)} className="text-[14px] hover:scale-110 active:scale-95 transition-all opacity-40 hover:opacity-100" title="IDをコピー">📋</button>
+                        )}
+                    </div>
                 </div>
                 <select
                     className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-xl text-slate-800 focus:border-premium-gold outline-none appearance-none cursor-pointer shadow-sm"

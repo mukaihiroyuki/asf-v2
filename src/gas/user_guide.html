@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>営業報告フォーム 使い方ガイド</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            padding: 40px 30px;
+            border-radius: 16px 16px 0 0;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f5f5f5;
+            padding: 12px;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .nav-tab {
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .nav-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: #e0e0e0;
+        }
+
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+        }
+
+        h3 {
+            color: #333;
+            margin: 24px 0 12px 0;
+            font-size: 1.1rem;
+        }
+
+        .feature-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .feature-card .icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .feature-card h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .step-list {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            position: relative;
+            padding: 16px 16px 16px 60px;
+            margin: 12px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .step-list li::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .warning-box strong {
+            color: #856404;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .success-box strong {
+            color: #155724;
+        }
+
+        .info-box {
+            background: #e7f1ff;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .info-box strong {
+            color: #667eea;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .faq-item {
+            margin: 16px 0;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .faq-item strong {
+            color: #667eea;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.4rem;
+            }
+
+            .nav-tab {
+                padding: 8px 14px;
+                font-size: 0.85rem;
+            }
+
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 移行案内 -->
+        <div style="background: #fff5f5; border: 3px solid #e74c3c; border-radius: 16px; padding: 25px; margin-bottom: 30px; text-align: center; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.1);">
+            <h2 style="color: #e74c3c; margin-bottom: 10px;">⚠️ アプリが新しくなりました！</h2>
+            <p style="font-weight: bold; color: #333; line-height: 1.6;">
+                このガイドに載っている古いアプリは、現在<b>ASF 2.0 (Next.js版)</b>へ完全移行しています。<br>
+                この画面を開いている方は、担当者から配布された最新のURL（Vercelリンク）を使用してください。
+            </p>
+        </div>
+        <div class="header">
+            <h1>📝 営業報告フォーム</h1>
+            <p>使い方ガイド</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showSection('overview')">概要</button>
+            <button class="nav-tab" onclick="showSection('login')">ログイン</button>
+            <button class="nav-tab" onclick="showSection('report')">入金管理リスト入力</button>
+            <button class="nav-tab" onclick="showSection('payment')">入金報告</button>
+            <button class="nav-tab" onclick="showSection('overdue')">未入金リスト</button>
+            <button class="nav-tab" onclick="showSection('faq')">FAQ</button>
+        </div>
+
+        <div class="content">
+            <!-- 概要 -->
+            <div id="overview" class="section active">
+                <h2>このアプリでできること</h2>
+                <div class="feature-cards">
+                    <div class="feature-card">
+                        <div class="icon">📋</div>
+                        <h4>入金管理リスト入力</h4>
+                        <p>新規契約の情報を入金管理リストに追加します</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">💰</div>
+                        <h4>入金報告</h4>
+                        <p>お客様からの入金があった際に報告します</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">⚠️</div>
+                        <h4>未入金リスト</h4>
+                        <p>契約後7日以上未入金のお客様を確認できます</p>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>📱 スマホでも使えます！</strong><br>
+                    URLにアクセスするだけ。Googleログインは不要です。
+                </div>
+            </div>
+
+            <!-- ログイン -->
+            <div id="login" class="section">
+                <h2>1. ログイン方法</h2>
+
+                <div class="info-box">
+                    <strong>💡 iPhone / Androidの方へ</strong><br>
+                    このアプリを使うには、まずスマホと「会社のGoogleアカウント」をつなぐ必要があります。<br>
+                    これが一番の難関ですが、一度やればOKです！
+                </div>
+
+                <h3>📱 iPhoneの場合</h3>
+                <ol class="step-list">
+                    <li>App Storeから<strong>「Google Chrome」</strong>というアプリを入れる（まだの場合）</li>
+                    <li>Chromeを開き、右下の「...」→「設定」をタップ</li>
+                    <li>「Chromeにログイン」をタップ</li>
+                    <li><strong>会社のGoogleアカウント（@sakurai...）を入れる</strong><br>
+                        <span style="font-size:0.9em; color:#666;">※ここが一番重要です！個人のアドレスではありません。</span>
+                    </li>
+                    <li>ログイン完了後、アプリのURLにアクセス</li>
+                </ol>
+
+                <h3>🤖 Androidの場合</h3>
+                <ol class="step-list">
+                    <li>Chromeを開く</li>
+                    <li>右上のアイコンをタップ</li>
+                    <li>「アカウントを追加」を選ぶ</li>
+                    <li><strong>会社のGoogleアカウント（@sakurai...）を入れる</strong></li>
+                </ol>
+
+                <div class="success-box">
+                    <strong>✅ これで準備OK！</strong><br>
+                    あとは管理者に教えてもらったURLを開き、PINコード（4桁）を入れるだけです。<br>
+                    2回目からはPIN入力も不要になります。
+                </div>
+
+                <h3>ログアウトしたい場合</h3>
+                <p>画面上部の「ログアウト」をタップしてください。</p>
+            </div>
+
+            <!-- 入金管理リスト入力 -->
+            <div id="report" class="section">
+                <h2>2. 入金管理リスト入力</h2>
+                <p><strong>目的：</strong>新規契約のお客様情報を入金管理リストに登録します。</p>
+
+                <h3>入力項目</h3>
+                <table>
+                    <tr>
+                        <th>項目</th>
+                        <th>説明</th>
+                    </tr>
+                    <tr>
+                        <td>面談ID</td>
+                        <td>顧客リストから選択<br><span
+                                style="font-size:0.8em; color:#00A1D6;">※選択するとスプレッドシートへの直接リンクが表示されます</span></td>
+                    </tr>
+                    <tr>
+                        <td>名前（契約名義）</td>
+                        <td>契約書と同じ名前を正確に入力</td>
+                    </tr>
+                    <tr>
+                        <td>決済方法</td>
+                        <td>クレジット、自社分割など</td>
+                    </tr>
+                    <tr>
+                        <td>プラン</td>
+                        <td>契約プランを選択</td>
+                    </tr>
+                    <tr>
+                        <td>契約締結日</td>
+                        <td>契約を結んだ日</td>
+                    </tr>
+                </table>
+
+                <div class="warning-box">
+                    <strong>⚠️ 必ず確認！</strong><br>
+                    送信前に「契約書内容をダブルチェック完了しました！！」にチェックを入れてください。
+                </div>
+
+                <h3>使い方</h3>
+                <ol class="step-list">
+                    <li>面談IDをドロップダウンから選択</li>
+                    <li><span
+                            style="font-size:0.9em; background:#e3f2fd; padding:2px 4px; border-radius:4px;">New!</span>
+                        青いリンクをクリックすると、スプレッドシートの該当行を直接開いて確認できます</li>
+                    <li>契約名義を入力（契約書と完全一致で！）</li>
+                    <li>決済方法とプランを選択</li>
+                    <li>契約日を確認</li>
+                    <li>チェックボックスにチェック</li>
+                    <li>「報告を送信」をタップ</li>
+                </ol>
+            </div>
+
+            <!-- 入金報告 -->
+            <div id="payment" class="section">
+                <h2>3. 入金報告</h2>
+                <p><strong>目的：</strong>お客様から入金があった際に記録します。</p>
+
+                <h3>入力項目</h3>
+                <table>
+                    <tr>
+                        <th>項目</th>
+                        <th>説明</th>
+                    </tr>
+                    <tr>
+                        <td>顧客（面談ID）</td>
+                        <td>入金があったお客様を選択<br><span
+                                style="font-size:0.8em; color:#00A1D6;">※選択すると「自分の入金管理シート」への直接リンクが表示されます</span></td>
+                    </tr>
+                    <tr>
+                        <td>決済日</td>
+                        <td>入金があった日</td>
+                    </tr>
+                    <tr>
+                        <td>決済金額</td>
+                        <td>入金額（数字のみ）</td>
+                    </tr>
+                    <tr>
+                        <td>決済方法</td>
+                        <td>どの方法で入金されたか</td>
+                    </tr>
+                </table>
+
+                <h3>使い方</h3>
+                <ol class="step-list">
+                    <li>「入金報告」タブをタップ</li>
+                    <li>顧客を選択（<span
+                            style="font-size:0.9em; background:#e3f2fd; padding:2px 4px; border-radius:4px;">New!</span>
+                        リンクから自分のシートを確認できます）</li>
+                    <li>決済日・金額・方法を入力</li>
+                    <li>「入金を報告」をタップ</li>
+                </ol>
+            </div>
+
+            <!-- 未入金リスト -->
+            <div id="overdue" class="section">
+                <h2>4. 未入金リスト</h2>
+                <p><strong>目的：</strong>契約から7日以上経過して未入金のお客様を確認します。</p>
+
+                <h3>表示される情報</h3>
+                <ul style="margin: 16px 0; padding-left: 24px;">
+                    <li>お客様名</li>
+                    <li>契約日</li>
+                    <li>経過日数</li>
+                </ul>
+
+                <h3>使い方</h3>
+                <ol class="step-list">
+                    <li>「未入金」タブをタップ</li>
+                    <li>リストを確認</li>
+                    <li>「入金報告」ボタンから直接入金報告も可能</li>
+                </ol>
+
+                <div class="success-box">
+                    <strong>✅ 未入金がゼロなら「未入金なし！」と表示されます</strong>
+                </div>
+            </div>
+
+            <!-- FAQ -->
+            <div id="faq" class="section">
+                <h2>よくある質問</h2>
+
+                <div class="faq-item">
+                    <strong>Q: PINを忘れました</strong>
+                    <p>管理者に連絡して確認してください。</p>
+                </div>
+
+                <div class="faq-item">
+                    <strong>Q: 面談IDがリストにない</strong>
+                    <p>「IDがない場合はこちら」リンクから追加依頼ができます。</p>
+                </div>
+
+                <div class="faq-item">
+                    <strong>Q: 入力を間違えた</strong>
+                    <p>管理者に連絡して修正を依頼してください。</p>
+                </div>
+
+                <div class="faq-item">
+                    <strong>Q: 別のスマホからアクセスしたい</strong>
+                    <p>同じURLにアクセスして、PINを入力すればOKです。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showSection(sectionId) {
+            // すべてのセクションを非表示
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            // すべてのタブを非アクティブ
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+
+            // 選択したセクションを表示
+            document.getElementById(sectionId).classList.add('active');
+            // 対応するタブをアクティブに
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+
+</html>

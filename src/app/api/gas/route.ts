@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxvn-XMTpvORv9vw4gLcpbOMVqnbIVYClkJPOPwcwa12Z4w7TsSmmtYFirmpmEqSZ_O/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzul7rH2rXfkQYzaG6_2Vonm4eojaq5Jbac0CgZDajJaWWrORObgtLEqL3Xq9SZIxjHt/exec';
+// 最新デプロイID (Tokyo Fix): AKfycbzul7rH2rXfkQYzaG6_2Vonm4eojaq5Jbac0CgZDajJaWWrORObgtLEqL3Xq9SZIxjHt
 
 export async function POST(request: Request) {
     try {
@@ -27,22 +28,31 @@ export async function POST(request: Request) {
 
         // JSON かどうか確認
         if (contentType && contentType.includes('application/json')) {
-            return NextResponse.json(JSON.parse(text));
+            try {
+                return NextResponse.json(JSON.parse(text));
+            } catch (e) {
+                console.error('JSON Parse Error. Data:', text.slice(0, 500));
+                return NextResponse.json({
+                    success: false,
+                    message: `GASから不正なJSONが返されました。構文エラーの可能性があります。 (Preview: ${text.slice(0, 100)})`
+                }, { status: 502 });
+            }
         } else {
             // HTML が返ってきた場合（権限エラーやログイン画面）
             console.error('--- GAS returned HTML instead of JSON ---');
+            console.error('Status:', response.status);
             console.error('Preview:', text.slice(0, 500));
 
-            if (text.includes('google-login') || text.includes('Sign in')) {
+            if (text.includes('google-login') || text.includes('Sign in') || response.status === 401) {
                 return NextResponse.json({
                     success: false,
-                    message: 'Googleへのログインが必要です。GASのデプロイ設定を「全員（Anyone）」にしてくれ！'
+                    message: `【致命的】Google認証エラーが発生したぜ。GASのデプロイ設定を「全員（Anyone）」に更新し、アクセス可能か確認してくれ！ (Status: ${response.status})`
                 }, { status: 403 });
             }
 
             return NextResponse.json({
                 success: false,
-                message: 'GASから不正な形式で応答がありました。デプロイ設定かURLを確認してくれ！'
+                message: `GASからHTMLが返されました。デプロイが無効か、URLが間違っている可能性があるぜ！ (Status: ${response.status}, Preview: ${text.slice(0, 50)})`
             }, { status: 502 });
         }
 

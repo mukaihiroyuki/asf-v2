@@ -1,0 +1,2119 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>営業報告フォーム</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .form-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .required::after {
+            content: ' *';
+            color: #e74c3c;
+        }
+
+        select,
+        input[type="text"],
+        input[type="date"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .warning-text {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .toggle-btn:hover:not(.active) {
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .success-message h2 {
+            color: #27ae60;
+            margin-bottom: 16px;
+        }
+
+        .reset-btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+
+        /* リマインダーボックス */
+        .reminder-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .reminder-title {
+            font-weight: 700;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .reminder-item {
+            color: #856404;
+            font-weight: 600;
+            margin: 4px 0;
+        }
+
+        /* 警告点滅アニメーション */
+        @keyframes warningBlink {
+
+            0%,
+            100% {
+                background: #ff6b00;
+                border-color: #ff8c00;
+            }
+
+            50% {
+                background: #1a1a1a;
+                border-color: #000;
+            }
+        }
+
+        .warning-check-box {
+            animation: warningBlink 2s ease-in-out infinite;
+            border: 3px solid #ffc107;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .warning-check-text {
+            font-weight: 800;
+            color: #ffd700;
+            font-size: 1.65rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .warning-check-note {
+            color: #856404;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        .reminder-sub {
+            color: #856404;
+            font-size: 0.85rem;
+            margin-left: 16px;
+        }
+
+        /* タブナビゲーション */
+        .tab-nav {
+            display: flex;
+            background: #f5f5f5;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #666;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 関連リンクセクション */
+        .link-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .link-section label {
+            font-size: 0.95rem;
+            color: #555;
+            margin-bottom: 12px;
+        }
+
+        .link-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .link-btn {
+            display: block;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .link-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .link-btn.check {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+        }
+
+        .link-btn.personal {
+            background: linear-gradient(135deg, #3498db 0%, #5dade2 100%);
+            color: white;
+        }
+
+        .link-btn.corporate {
+            background: linear-gradient(135deg, #9b59b6 0%, #a569bd 100%);
+            color: white;
+        }
+
+        /* 細めのリンクボタン（80%サイズ） */
+        .link-btn-slim {
+            display: block;
+            padding: 10px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .link-btn-slim:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+        }
+
+        .link-btn-slim.bank {
+            background: linear-gradient(135deg, #16a085 0%, #1abc9c 100%);
+            color: white;
+        }
+
+        .link-btn-slim.form {
+            background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+            color: white;
+        }
+
+        .slim-link-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        /* 未入金リスト */
+        .overdue-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .overdue-header h3 {
+            color: #e74c3c;
+            margin-bottom: 8px;
+        }
+
+        .overdue-header p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .refresh-btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .overdue-list {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        @media (max-width: 500px) {
+            .overdue-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .overdue-item {
+            background: #fff5f5;
+            border: 2px solid #e74c3c;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .overdue-item .customer-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .overdue-item .details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .overdue-item .days {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .no-overdue {
+            text-align: center;
+            padding: 40px 20px;
+            color: #27ae60;
+        }
+
+        .no-overdue h3 {
+            margin-bottom: 8px;
+        }
+
+        .loading-text {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+
+        /* 入金報告ボタン（未入金リスト内） */
+        .quick-payment-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .quick-payment-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(39, 174, 96, 0.3);
+        }
+
+        /* ID追加依頼モーダル */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 450px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-section {
+            margin-bottom: 16px;
+        }
+
+        .modal-section label {
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+        .modal-section input,
+        .modal-section select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .sample-image-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .sample-image-container p {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .sample-image-container img {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .generated-text-container {
+            display: none;
+            background: #e8f5e9;
+            border: 2px solid #27ae60;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .generated-text-container.show {
+            display: block;
+        }
+
+        .generated-text-container pre {
+            white-space: pre-wrap;
+            font-family: inherit;
+            margin: 0 0 12px 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .copy-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .copy-btn.copied {
+            background: #333;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .id-request-link {
+            display: inline-block;
+            margin-top: 8px;
+            color: #e74c3c;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .id-request-link:hover {
+            color: #c0392b;
+        }
+
+        .line-group-info {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+        }
+
+        .line-group-info strong {
+            color: #856404;
+        }
+
+        /* ===================== */
+        /* PIN認証画面 */
+        /* ===================== */
+        .login-screen {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .login-screen.hidden {
+            display: none;
+        }
+
+        .login-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .login-screen h2 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .login-screen p {
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .pin-input-group {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .pin-hidden-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
+            font-size: 16px;
+            /* prevent zoom on iOS */
+        }
+
+        .pin-digit {
+            width: 50px;
+            height: 60px;
+            font-size: 2rem;
+            line-height: 56px;
+            /* vert centered */
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        .pin-digit.active {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        /* 最初のボックスにカーソルアニメーション */
+        .pin-digit.active::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 2px;
+            height: 30px;
+            background: #667eea;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            49% {
+                opacity: 1;
+            }
+
+            50%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-error {
+            color: #e74c3c;
+            font-weight: 600;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .login-error.show {
+            display: block;
+        }
+
+        .user-badge {
+            background: #e8f5e9;
+            border: 2px solid #27ae60;
+            border-radius: 8px;
+            padding: 8px 16px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .user-badge span {
+            font-weight: 700;
+            color: #27ae60;
+        }
+
+        .logout-link {
+            font-size: 0.85rem;
+            color: #999;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .logout-link:hover {
+            color: #e74c3c;
+        }
+
+        .main-app.hidden {
+            display: none;
+        }
+
+        /* コピーボタン用スタイル */
+        .copy-btn-icon {
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 1.2rem;
+            vertical-align: middle;
+            background: none;
+            border: none;
+            padding: 0;
+            transition: transform 0.2s;
+        }
+
+        .copy-btn-icon:hover {
+            transform: scale(1.2);
+        }
+
+        /* コビーツールチップ（トースト） */
+        .copy-tooltip {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .copy-tooltip.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ============ PIN認証画面 ============ -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-icon">🔐</div>
+        <h2>営業報告フォーム</h2>
+        <p>4桁のPINコードを入力してください</p>
+        <div class="pin-input-group" onclick="document.getElementById('pinInput').focus()">
+            <input type="tel" id="pinInput" class="pin-hidden-input" maxlength="4" pattern="[0-9]*" autocomplete="off">
+            <div class="pin-digit" id="pinDisp1"></div>
+            <div class="pin-digit" id="pinDisp2"></div>
+            <div class="pin-digit" id="pinDisp3"></div>
+            <div class="pin-digit" id="pinDisp4"></div>
+        </div>
+        <button type="button" class="login-btn" id="loginBtn" onclick="handleLogin()">ログイン</button>
+        <p class="login-error" id="loginError">PINが正しくありません</p>
+    </div>
+
+    <!-- ============ メインアプリ ============ -->
+    <div class="container main-app hidden" id="mainApp">
+        <div class="header">
+            <!-- Version 37: Fixed Direct Row Links (Local Sheet) -->
+            <h1>📝 営業報告フォーム</h1>
+            <div class="user-badge">👤 <span id="currentUserName">ログイン中</span></div>
+            <span class="logout-link" onclick="handleLogout()">ログアウト</span>
+        </div>
+
+        <!-- タブナビゲーション -->
+        <div class="tab-nav">
+            <button type="button" class="tab-btn active" onclick="switchTab('contract')">入金管理リスト入力</button>
+            <button type="button" class="tab-btn" onclick="switchTab('payment')">入金報告</button>
+            <button type="button" class="tab-btn" onclick="switchTab('overdue')">⚠️ 未入金</button>
+        </div>
+
+        <!-- 新規契約タブ -->
+        <div class="tab-content active" id="contractTab">
+            <div class="form-body" id="formSection">
+                <form id="reportForm">
+                    <!-- 面談ID -->
+                    <div class="form-group">
+                        <label class="required">
+                            面談ID
+                            <button type="button" class="copy-btn-icon" onclick="copyToClipboard('interviewId', '面談ID')"
+                                title="面談IDをコピー">📋</button>
+                        </label>
+                        <input type="text" id="customerSearch" placeholder="🔍 名前やIDで検索..."
+                            style="margin-bottom: 8px; width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        <select id="interviewId" required onchange="onInterviewIdChange()">
+                            <option value="">読み込み中...</option>
+                        </select>
+                        <div id="interviewLinkContainer" style="margin-top: 4px; min-height: 20px;"></div>
+                        <span class="id-request-link" onclick="openIdRequestModal()">⚙️ IDがない場合はこちら</span>
+                    </div>
+
+                    <!-- LINE名（参照用・編集不可） -->
+                    <div class="form-group">
+                        <label>
+                            LINE名（参照用）
+                            <button type="button" class="copy-btn-icon" onclick="copyToClipboard('lineName', 'LINE名')"
+                                title="LINE名をコピー">📋</button>
+                        </label>
+                        <input type="text" id="lineName" readonly
+                            style="background-color: #f5f5f5; color: #888; cursor: not-allowed;"
+                            placeholder="面談IDを選択すると表示されます">
+                    </div>
+
+                    <!-- 名前（契約名義） -->
+                    <div class="form-group">
+                        <label class="required">
+                            名前（契約名義）
+                            <button type="button" class="copy-btn-icon"
+                                onclick="copyToClipboard('contractName', '契約名義')" title="契約名義をコピー">📋</button>
+                        </label>
+                        <input type="text" id="contractName" name="contract-name-no-autocomplete"
+                            placeholder="契約書に記載の名前" required autocomplete="new-password">
+                        <p class="warning-text">⚠️ 契約書と同じ名前を入力してください（ダブルチェック必須）</p>
+                    </div>
+
+
+                    <!-- オンボーディング完了 -->
+                    <div class="form-group">
+                        <label>オンボーディング完了</label>
+                        <div class="toggle-group">
+                            <button type="button" class="toggle-btn" id="onboardingYes" onclick="setOnboarding(true)">◯
+                                完了</button>
+                            <button type="button" class="toggle-btn active" id="onboardingNo"
+                                onclick="setOnboarding(false)">未完了</button>
+                        </div>
+                    </div>
+
+                    <!-- 決済方法 -->
+                    <div class="form-group">
+                        <label class="required">決済方法</label>
+                        <select id="paymentMethod" required onchange="onPaymentMethodChange()">
+                            <option value="">読み込み中...</option>
+                        </select>
+                    </div>
+
+                    <!-- プラン選択 -->
+                    <div class="form-group">
+                        <label class="required">プラン</label>
+                        <select id="planId" required onchange="onPlanChange()">
+                            <option value="">読み込み中...</option>
+                        </select>
+                    </div>
+
+                    <!-- 契約締結日 -->
+                    <div class="form-group">
+                        <label class="required">契約締結日</label>
+                        <input type="date" id="contractDate" required>
+                    </div>
+
+                    <!-- 頭金選択（分割払いの時のみ表示） -->
+                    <div class="form-group" id="downPaymentGroup" style="display: none;">
+                        <label class="required">頭金</label>
+                        <select id="downPayment" onchange="onDownPaymentChange()">
+                            <option value="0">¥0</option>
+                            <option value="10000">¥10,000</option>
+                            <option value="30000">¥30,000</option>
+                            <option value="50000">¥50,000</option>
+                            <option value="100000">¥100,000</option>
+                            <option value="150000">¥150,000</option>
+                            <option value="200000">¥200,000</option>
+                            <option value="250000">¥250,000</option>
+                            <option value="300000">¥300,000</option>
+                            <option value="350000">¥350,000</option>
+                            <option value="400000">¥400,000</option>
+                            <option value="450000">¥450,000</option>
+                            <option value="500000">¥500,000</option>
+                        </select>
+                    </div>
+
+                    <!-- 発生売上（自動計算・読み取り専用） -->
+                    <div class="form-group">
+                        <label>発生売上（税込）</label>
+                        <input type="text" id="salesAmount" readonly
+                            style="background-color: #e8f5e9; font-weight: bold; font-size: 1.2rem;"
+                            placeholder="プランと決済方法を選択すると自動計算">
+                        <input type="hidden" id="salesAmountValue">
+                        <div class="slim-link-section">
+                            <a href="https://docs.google.com/forms/d/1-nGsZEGAMvCSmCXEieT2exjsbRpRnBj052TzrV0CRKY/viewform"
+                                target="_blank" class="link-btn-slim form">📝 自社分割手続き完了報告</a>
+                            <a href="https://docs.google.com/forms/d/e/1FAIpQLSefvBnWhKXg27qsd2Z8jmtzk47uhUBbNQ668_YVIxbj1Am51Q/viewform"
+                                target="_blank" class="link-btn-slim bank">🏦 銀振明細書添付</a>
+                        </div>
+                    </div>
+
+                    <!-- 備考（任意） -->
+                    <div class="form-group">
+                        <label>備考（任意）</label>
+                        <textarea id="notes" rows="2" placeholder="スプレッドシートの顧客名セルにメモとして残ります"
+                            style="width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; resize: vertical;"></textarea>
+                    </div>
+
+                    <!-- 関連リンクセクション -->
+                    <div class="form-group link-section">
+                        <label>📎 関連リンク</label>
+                        <div class="link-list">
+                            <a href="https://script.google.com/a/macros/team.addness.co.jp/s/AKfycbww4f5lIgshiS-x7nS-EMC67L-52nz-q7m8HfOAAt_iJcQMfPWeXZVl3-525FpptZHE/exec"
+                                target="_blank" class="link-btn check">
+                                ✅ 契約書チェックフォーム
+                            </a>
+                            <a href="https://docs.google.com/forms/d/e/1FAIpQLSc9DHb7GmOUugQyaZJmbZm4rAhKb1w0H2wQ_iVXTPGZqDsD_g/viewform"
+                                target="_blank" class="link-btn personal">
+                                📄 郵送依頼（個人）
+                            </a>
+                            <a href="https://docs.google.com/forms/d/e/1FAIpQLSdD7Nhg0cg3JQna_sH7Y5-4pstIrCN442qypRygxgs3CM_gXQ/viewform"
+                                target="_blank" class="link-btn corporate">
+                                🏢 郵送依頼（法人）
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 契約書チェック確認（必須） -->
+                    <div class="form-group warning-check-box">
+                        <label style="display: flex; align-items: center; cursor: pointer; margin: 0;">
+                            <input type="checkbox" id="contractCheckConfirm" required
+                                style="width: 24px; height: 24px; margin-right: 12px; cursor: pointer;">
+                            <span class="warning-check-text">
+                                ✅ 内容確認OK
+                            </span>
+                        </label>
+                        <p class="warning-check-note">⚠️ チェックを入れないと報告を送信できません</p>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">報告を送信</button>
+                </form>
+
+                <div class="loading" id="loading">
+                    <p>送信中...</p>
+                </div>
+            </div>
+
+            <div class="success-message" id="successSection">
+                <h2>✅ 報告完了！</h2>
+                <p>入金管理リストに追加されました</p>
+                <div class="reminder-box">
+                    <p class="reminder-title">📢 忘れずに！</p>
+                    <p class="reminder-item">・速報は出しましたか？</p>
+                    <p class="reminder-item">・顧客リストの更新は完了しましたか？</p>
+                    <p class="reminder-sub">（ステータス・収録リンク・顧客メールアドレス）</p>
+                </div>
+                <button class="reset-btn" onclick="resetForm()">新しい報告を作成</button>
+            </div>
+        </div><!-- contractTab終了 -->
+
+        <!-- 入金報告タブ -->
+        <div class="tab-content" id="paymentTab">
+            <div class="form-body" id="paymentFormSection">
+                <form id="paymentForm">
+                    <!-- 顧客選択 -->
+                    <div class="form-group">
+                        <label class="required">顧客（面談ID）</label>
+                        <input type="text" id="paymentCustomerSearch" placeholder="🔍 名前やIDで検索..."
+                            style="margin-bottom: 8px; width: 100%; padding: 8px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        <select id="paymentCustomerId" required onchange="onPaymentCustomerIdChange()">
+                            <option value="">選択してください</option>
+                        </select>
+                        <div id="paymentInterviewLinkContainer" style="margin-top: 4px; min-height: 20px;"></div>
+                    </div>
+
+                    <!-- 決済日 -->
+                    <div class="form-group">
+                        <label class="required">決済日</label>
+                        <input type="date" id="paymentDate" required>
+                    </div>
+
+                    <!-- 決済金額 -->
+                    <div class="form-group">
+                        <label class="required">決済金額</label>
+                        <input type="number" id="paymentAmount" placeholder="例: 100000" required>
+                    </div>
+
+                    <!-- 決済方法 -->
+                    <div class="form-group">
+                        <label class="required">決済方法</label>
+                        <select id="paymentMethodSelect" required>
+                            <option value="">選択してください</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="paymentSubmitBtn">入金を報告</button>
+                </form>
+
+                <div class="loading" id="paymentLoading">
+                    <p>送信中...</p>
+                </div>
+            </div>
+
+            <div class="success-message" id="paymentSuccessSection">
+                <h2>✅ 入金報告完了！</h2>
+                <p>入金情報が記録されました</p>
+                <button class="reset-btn" onclick="resetPaymentForm()">新しい入金を報告</button>
+            </div>
+        </div>
+
+        <!-- 未入金リストタブ -->
+        <div class="tab-content" id="overdueTab">
+            <div class="form-body">
+                <div class="overdue-header">
+                    <h3>⚠️ 入金停滞リスト</h3>
+                    <p>契約日から7日以上経過して未入金の顧客</p>
+                    <button type="button" class="refresh-btn" onclick="loadOverdueList()">🔄 更新</button>
+                </div>
+                <div id="overdueListContainer">
+                    <p class="loading-text">読み込み中...</p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let onboardingValue = false;
+            let planList = [];  // プランリストを保持
+            let currentStaffName = '';  // ログイン中の営業マン名
+            let currentSpreadsheetId = '';  // ログイン中の営業マンのスプシID
+
+            // ============ PIN認証関連 ============
+
+            // PIN入力フィールドの制御（1つの隠しinputで制御）
+            const pinInput = document.getElementById('pinInput');
+            const pinDisps = [
+                document.getElementById('pinDisp1'),
+                document.getElementById('pinDisp2'),
+                document.getElementById('pinDisp3'),
+                document.getElementById('pinDisp4')
+            ];
+
+
+            // 初期状態：最初のボックスをアクティブに（点滅カーソル表示）
+            pinDisps[0].classList.add('active');
+
+            pinInput.addEventListener('input', function () {
+                // 数字以外を除去
+                this.value = this.value.replace(/[^0-9]/g, '');
+                const val = this.value;
+
+                // 画面表示を更新
+                pinDisps.forEach((disp, i) => {
+                    if (i < val.length) {
+                        disp.textContent = '●'; // マスク表示
+                        disp.classList.add('active');
+                    } else if (i === val.length) {
+                        // 次に入力するボックスをアクティブに
+                        disp.textContent = '';
+                        disp.classList.add('active');
+                    } else {
+                        disp.textContent = '';
+                        disp.classList.remove('active');
+                    }
+                });
+
+                // 4桁入力されたら自動ログイン試行？
+                if (val.length === 4) {
+                    // 少し待ってから実行（UX的に）
+                    setTimeout(handleLogin, 300);
+                }
+            });
+
+            // Enterキー対応
+            pinInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+
+
+            // ログイン処理
+            function handleLogin() {
+                const pin = document.getElementById('pinInput').value;
+
+                if (pin.length !== 4) {
+                    showLoginError('4桁すべて入力してください');
+                    return;
+                }
+
+                document.getElementById('loginBtn').disabled = true;
+                document.getElementById('loginBtn').textContent = '確認中...';
+
+                google.script.run
+                    .withSuccessHandler(function (result) {
+                        if (result.success) {
+                            localStorage.setItem('salesAppPIN', pin);
+                            localStorage.setItem('salesAppStaffName', result.staffName);
+                            localStorage.setItem('salesAppSpreadsheetId', result.spreadsheetId);
+                            showMainApp(result.staffName, result.spreadsheetId);
+                        } else {
+                            showLoginError(result.message);
+                            document.getElementById('loginBtn').disabled = false;
+                            document.getElementById('loginBtn').textContent = 'ログイン';
+                        }
+                    })
+                    .withFailureHandler(function (error) {
+                        showLoginError('エラー: ' + error);
+                        document.getElementById('loginBtn').disabled = false;
+                        document.getElementById('loginBtn').textContent = 'ログイン';
+                    })
+                    .authenticateByPIN(pin);
+            }
+
+            function showLoginError(message) {
+                const errorEl = document.getElementById('loginError');
+                errorEl.textContent = message;
+                errorEl.classList.add('show');
+            }
+
+            function showMainApp(staffName, spreadsheetId) {
+                currentStaffName = staffName;
+                currentSpreadsheetId = spreadsheetId;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('currentUserName').textContent = staffName;
+                initializeApp();
+            }
+
+            function handleLogout() {
+                if (confirm('ログアウトしますか？')) {
+                    localStorage.removeItem('salesAppPIN');
+                    localStorage.removeItem('salesAppStaffName');
+                    localStorage.removeItem('salesAppSpreadsheetId');
+                    location.reload();
+                }
+            }
+
+            function checkSavedAuth() {
+                const savedPIN = localStorage.getItem('salesAppPIN');
+                const savedStaffName = localStorage.getItem('salesAppStaffName');
+                const savedSpreadsheetId = localStorage.getItem('salesAppSpreadsheetId');
+
+                if (savedPIN && savedStaffName && savedSpreadsheetId) {
+                    // 保存された認証情報を復元
+                    showMainApp(savedStaffName, savedSpreadsheetId);
+                    return true;
+                }
+                return false;
+            }
+
+            // アプリ初期化（認証成功後に呼ばれる）
+            function initializeApp() {
+                loadCustomerList();          // 新規契約タブ用
+                loadPaymentCustomerList();   // 入金報告タブ用（入金管理リストから）
+                loadPaymentMethods();
+                loadPlanList();
+                loadPaymentMethodsForH();    // 入金タブ用（H列）
+                setTodayDate();
+                setPaymentTodayDate();
+
+                // ★スマホ対応: プルダウン変更時に確実に金額を再計算するためのイベントリスナー
+                const planSelect = document.getElementById('planId');
+                const paymentMethodSelect = document.getElementById('paymentMethod');
+                const downPaymentSelect = document.getElementById('downPayment');
+
+                // changeとinput両方にリスナーを設定（スマホブラウザ互換性対策）
+                planSelect.addEventListener('change', onPlanChange);
+                planSelect.addEventListener('input', onPlanChange);
+
+                paymentMethodSelect.addEventListener('change', onPaymentMethodChange);
+                paymentMethodSelect.addEventListener('input', onPaymentMethodChange);
+
+                downPaymentSelect.addEventListener('change', onDownPaymentChange);
+                downPaymentSelect.addEventListener('input', onDownPaymentChange);
+                downPaymentSelect.addEventListener('change', onDownPaymentChange);
+                downPaymentSelect.addEventListener('input', onDownPaymentChange);
+            }
+
+            // ============ コピー機能 ============
+            function copyToClipboard(elementId, labelName) {
+                const element = document.getElementById(elementId);
+                let text = element.value;
+
+                if (!text) {
+                    showToast('コピーする値がありません');
+                    return;
+                }
+
+                // クリップボードAPIを使用
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('✅ ' + labelName + 'をコピーしました');
+                }).catch(err => {
+                    console.error('Copy failed', err);
+                    // 万が一APIが使えない場合のフォールバック（iOSなどで稀に必要）
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed";
+                    textArea.style.left = "-9999px";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast('✅ ' + labelName + 'をコピーしました');
+                    } catch (err) {
+                        showToast('❌ コピーに失敗しました');
+                    }
+                    document.body.removeChild(textArea);
+                });
+            }
+
+            function showToast(message) {
+                let tooltip = document.getElementById('copyTooltip');
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.id = 'copyTooltip';
+                    tooltip.className = 'copy-tooltip';
+                    document.body.appendChild(tooltip);
+                }
+                tooltip.textContent = message;
+                tooltip.classList.add('show');
+                setTimeout(() => {
+                    tooltip.classList.remove('show');
+                }, 2000);
+            }
+
+            // 初期化
+            document.addEventListener('DOMContentLoaded', function () {
+                // 保存済み認証があるかチェック
+                if (!checkSavedAuth()) {
+                    // 未認証：ログイン画面のまま、PIN入力欄にフォーカス
+                    document.getElementById('pinInput').focus();
+                }
+            });
+
+            // 顧客リスト読み込み（新規契約タブ用 - 顧客リストシートから）
+            let allCustomersData = []; // 全顧客データを保持
+
+            function loadCustomerList() {
+                google.script.run
+                    .withSuccessHandler(function (customers) {
+                        // データ保存（新着順にソート済みであることを前提にreverse）
+                        allCustomersData = customers.reverse();
+                        renderCustomerSelect(allCustomersData);
+                    })
+                    .withFailureHandler(function (error) {
+                        console.error('顧客リスト取得エラー:', error);
+                        const select = document.getElementById('interviewId');
+                        select.innerHTML = '<option value="">エラー: 再読み込みしてください</option>';
+                    })
+                    .getCustomerList(currentSpreadsheetId);
+            }
+
+            // 検索ボックスのイベントリスナー
+            document.getElementById('customerSearch').addEventListener('input', function (e) {
+                const keyword = e.target.value.toLowerCase();
+                const filtered = allCustomersData.filter(c =>
+                    c.name.toLowerCase().includes(keyword) ||
+                    String(c.id).includes(keyword)
+                );
+                renderCustomerSelect(filtered);
+            });
+
+            // セレクトボックス描画関数
+            function renderCustomerSelect(list) {
+                const select = document.getElementById('interviewId');
+                select.innerHTML = '<option value="">↓選択してください↓</option>';
+
+                // 検索結果が空の場合
+                if (list.length === 0) {
+                    const option = document.createElement('option');
+                    option.disabled = true;
+                    option.textContent = '該当なし';
+                    select.appendChild(option);
+                    return;
+                }
+
+                // パフォーマンス考慮してFragment使用
+                const fragment = document.createDocumentFragment();
+                list.forEach(function (c) {
+                    const option = document.createElement('option');
+                    option.value = c.id;
+                    option.textContent = c.name + ' - ' + c.id;
+                    option.dataset.lineName = c.name;
+                    if (c.link) option.dataset.link = c.link;
+                    fragment.appendChild(option);
+                });
+                select.appendChild(fragment);
+
+                // リセットされたのでLINE名表示もクリア
+                document.getElementById('lineName').value = '';
+                document.getElementById('interviewLinkContainer').innerHTML = '';
+            }
+
+            // 入金報告タブ用の顧客リスト読み込み（入金管理リストから - 顧客名表示）
+            let allPaymentCustomersData = []; // 入金用顧客データを保持
+
+            function loadPaymentCustomerList() {
+                google.script.run
+                    .withSuccessHandler(function (customers) {
+                        // データ保存
+                        allPaymentCustomersData = customers.reverse();
+                        renderPaymentCustomerSelect(allPaymentCustomersData);
+                    })
+                    .withFailureHandler(function (error) {
+                        console.error('入金顧客リスト取得エラー:', error);
+                        const paymentSelect = document.getElementById('paymentCustomerId');
+                        paymentSelect.innerHTML = '<option value="">エラー: 再読み込みしてください</option>';
+                    })
+                    .getPaymentCustomerList(currentSpreadsheetId);
+            }
+
+            // 入金用検索ボックスのイベントリスナー
+            document.getElementById('paymentCustomerSearch').addEventListener('input', function (e) {
+                const keyword = e.target.value.toLowerCase();
+                const filtered = allPaymentCustomersData.filter(c =>
+                    c.customerName.toLowerCase().includes(keyword) ||
+                    String(c.id).includes(keyword)
+                );
+                renderPaymentCustomerSelect(filtered);
+            });
+
+            // 入金用セレクトボックス描画関数
+            function renderPaymentCustomerSelect(list) {
+                const paymentSelect = document.getElementById('paymentCustomerId');
+                paymentSelect.innerHTML = '<option value="">↓選択してください↓</option>';
+
+                if (list.length === 0) {
+                    const option = document.createElement('option');
+                    option.disabled = true;
+                    option.textContent = '該当なし';
+                    paymentSelect.appendChild(option);
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+                list.forEach(function (c) {
+                    const option = document.createElement('option');
+                    option.value = c.id;
+                    option.textContent = c.customerName + ' - ' + c.id;
+                    if (c.link) option.dataset.link = c.link;
+                    fragment.appendChild(option);
+                });
+                paymentSelect.appendChild(fragment);
+
+                // リセット
+                const linkContainer = document.getElementById('paymentInterviewLinkContainer');
+                if (linkContainer) linkContainer.innerHTML = '';
+            }
+
+            // 面談ID選択時にLINE名を表示 + リンク表示
+            function onInterviewIdChange() {
+                const select = document.getElementById('interviewId');
+                const selectedOption = select.options[select.selectedIndex];
+                const lineNameInput = document.getElementById('lineName');
+                const linkContainer = document.getElementById('interviewLinkContainer');
+
+                if (selectedOption && selectedOption.value) {
+                    lineNameInput.value = selectedOption.dataset.lineName || '';
+                } else {
+                    lineNameInput.value = '';
+                }
+
+                // リンク表示
+                if (selectedOption && selectedOption.dataset.link) {
+                    linkContainer.innerHTML = `<a href="${selectedOption.dataset.link}" target="_blank" style="color: #00A1D6; text-decoration: underline; font-size: 0.9em;">📄 データマスタの行を開く ↗</a>`;
+                } else {
+                    linkContainer.innerHTML = '';
+                }
+            }
+
+            // 入金用顧客選択時にリンク表示
+            function onPaymentCustomerIdChange() {
+                const select = document.getElementById('paymentCustomerId');
+                const selectedOption = select.options[select.selectedIndex];
+                const linkContainer = document.getElementById('paymentInterviewLinkContainer');
+
+                if (selectedOption && selectedOption.dataset.link) {
+                    linkContainer.innerHTML = `<a href="${selectedOption.dataset.link}" target="_blank" style="color: #00A1D6; text-decoration: underline; font-size: 0.9em;">📄 データマスタの行を開く ↗</a>`;
+                } else {
+                    linkContainer.innerHTML = '';
+                }
+            }
+
+            // 決済方法読み込み
+            function loadPaymentMethods() {
+                google.script.run
+                    .withSuccessHandler(function (methods) {
+                        const select = document.getElementById('paymentMethod');
+                        select.innerHTML = '<option value="">↓選択してください↓</option>';
+                        methods.forEach(function (m) {
+                            const option = document.createElement('option');
+                            option.value = m;
+                            option.textContent = m;
+                            select.appendChild(option);
+                        });
+                    })
+                    .withFailureHandler(function (error) {
+                        console.error('決済方法取得エラー:', error);
+                        document.getElementById('paymentMethod').innerHTML = '<option value="">エラー: 再読み込みしてください</option>';
+                    })
+                    .getPaymentMethods(currentSpreadsheetId);
+            }
+
+            // プランリスト読み込み
+            function loadPlanList() {
+                google.script.run
+                    .withSuccessHandler(function (plans) {
+                        planList = plans;  // グローバル変数に保存
+                        const select = document.getElementById('planId');
+                        select.innerHTML = '<option value="">↓選択してください↓</option>';
+                        plans.forEach(function (p) {
+                            const option = document.createElement('option');
+                            option.value = p.id;
+                            option.textContent = p.name;
+                            option.dataset.priceGeneral = p.priceGeneral;
+                            option.dataset.priceBank = p.priceBank;
+                            option.dataset.isInstallment = p.isInstallment;
+                            select.appendChild(option);
+                        });
+                    })
+                    .withFailureHandler(function (error) {
+                        console.error('プランリスト取得エラー:', error);
+                        document.getElementById('planId').innerHTML = '<option value="">エラー: 再読み込みしてください</option>';
+                    })
+                    .getPlanList();
+            }
+
+            // プラン選択時に金額を計算
+            function onPlanChange() {
+                updateDownPaymentVisibility();
+                calculatePrice();
+            }
+
+            // 決済方法選択時に頭金表示と金額を更新
+            function onPaymentMethodChange() {
+                updateDownPaymentVisibility();  // 自社分割なら頭金欄を表示
+                // calculatePrice() は updateDownPaymentVisibility() 内で呼ばれる
+            }
+
+            // 頭金選択時に金額を更新
+            function onDownPaymentChange() {
+                calculatePrice();
+            }
+
+            // 頭金入力欄の表示/非表示を切り替え
+            // ★ポカヨケ: 決済方法に「自社分割」が含まれていたら頭金モード
+            function updateDownPaymentVisibility() {
+                const downPaymentGroup = document.getElementById('downPaymentGroup');
+                const paymentMethod = document.getElementById('paymentMethod').value;
+
+                // 決済方法ベースで判定（プランのis_installmentフラグは使わない）
+                const isInstallment = paymentMethod.includes('自社分割');
+
+                downPaymentGroup.style.display = isInstallment ? 'block' : 'none';
+
+                // 表示/非表示が変わったら金額も再計算
+                calculatePrice();
+            }
+
+            // 金額を自動計算
+            // ★ポカヨケ: 決済方法に「自社分割」が含まれていたら頭金が売上になる
+            function calculatePrice() {
+                const planSelect = document.getElementById('planId');
+                const paymentMethod = document.getElementById('paymentMethod').value;
+                const salesAmountDisplay = document.getElementById('salesAmount');
+                const salesAmountValue = document.getElementById('salesAmountValue');
+
+                if (!planSelect.value || !paymentMethod) {
+                    salesAmountDisplay.value = '';
+                    salesAmountValue.value = '';
+                    return;
+                }
+
+                const selectedOption = planSelect.options[planSelect.selectedIndex];
+
+                // ★決済方法ベースで判定（プランのis_installmentフラグは使わない）
+                const isInstallment = paymentMethod.includes('自社分割');
+
+                let price;
+
+                if (isInstallment) {
+                    // 自社分割の場合は頭金が売上になる
+                    const downPayment = document.getElementById('downPayment').value;
+                    price = Number(downPayment);
+                } else {
+                    // 通常の場合はプラン価格
+                    const priceGeneral = Number(selectedOption.dataset.priceGeneral);
+                    const priceBank = Number(selectedOption.dataset.priceBank);
+                    // ★銀振「一括」のみ1万円引き（「+」を含む併用は通常価格）
+                    const hasBankTransfer = paymentMethod.includes('銀振') || paymentMethod.includes('銀行');
+                    const isCombined = paymentMethod.includes('+');
+                    const isBankTransferOnly = hasBankTransfer && !isCombined;
+                    price = isBankTransferOnly ? priceBank : priceGeneral;
+                }
+
+                // 表示用とhidden用にセット
+                salesAmountDisplay.value = '¥' + price.toLocaleString();
+                salesAmountValue.value = price;
+            }
+
+            // 今日の日付をセット
+            function setTodayDate() {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('contractDate').value = today;
+            }
+
+            // オンボーディング切り替え
+            function setOnboarding(value) {
+                onboardingValue = value;
+                document.getElementById('onboardingYes').classList.toggle('active', value);
+                document.getElementById('onboardingNo').classList.toggle('active', !value);
+            }
+
+            // フォーム送信
+            document.getElementById('reportForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const formData = {
+                    interviewId: document.getElementById('interviewId').value,
+                    contractName: document.getElementById('contractName').value,
+                    onboarding: onboardingValue,
+                    paymentMethod: document.getElementById('paymentMethod').value,
+                    contractDate: document.getElementById('contractDate').value,
+                    salesAmount: Number(document.getElementById('salesAmountValue').value),
+                    notes: document.getElementById('notes').value,
+                    spreadsheetId: currentSpreadsheetId  // ★動的スプシID
+                };
+
+                document.getElementById('submitBtn').disabled = true;
+                document.getElementById('loading').classList.add('show');
+
+                google.script.run
+                    .withSuccessHandler(function (result) {
+                        document.getElementById('loading').classList.remove('show');
+                        if (result.success) {
+                            document.getElementById('formSection').style.display = 'none';
+                            document.getElementById('successSection').classList.add('show');
+                        } else {
+                            alert(result.message);
+                            document.getElementById('submitBtn').disabled = false;
+                        }
+                    })
+                    .withFailureHandler(function (error) {
+                        document.getElementById('loading').classList.remove('show');
+                        alert('エラーが発生しました: ' + error);
+                        document.getElementById('submitBtn').disabled = false;
+                    })
+                    .submitReport(formData);
+            });
+
+            // フォームリセット
+            function resetForm() {
+                document.getElementById('reportForm').reset();
+                setOnboarding(false);
+                setTodayDate();
+                document.getElementById('formSection').style.display = 'block';
+                document.getElementById('successSection').classList.remove('show');
+                document.getElementById('submitBtn').disabled = false;
+            }
+
+            // ========================================
+            // タブ切り替え
+            // ========================================
+            function switchTab(tabName, customerId) {
+                // タブボタンの切り替え
+                document.querySelectorAll('.tab-btn').forEach(function (btn, index) {
+                    btn.classList.remove('active');
+                    // 対応するタブを探してactiveにする
+                    if ((tabName === 'contract' && index === 0) ||
+                        (tabName === 'payment' && index === 1) ||
+                        (tabName === 'overdue' && index === 2)) {
+                        btn.classList.add('active');
+                    }
+                });
+
+                // タブコンテンツの切り替え
+                document.querySelectorAll('.tab-content').forEach(function (content) {
+                    content.classList.remove('active');
+                });
+
+                if (tabName === 'contract') {
+                    document.getElementById('contractTab').classList.add('active');
+                } else if (tabName === 'payment') {
+                    document.getElementById('paymentTab').classList.add('active');
+                    // customerIdが指定されていれば、ドロップダウンで選択する
+                    if (customerId) {
+                        const paymentSelect = document.getElementById('paymentCustomerId');
+                        paymentSelect.value = customerId;
+                    }
+                } else if (tabName === 'overdue') {
+                    document.getElementById('overdueTab').classList.add('active');
+                    loadOverdueList();  // タブ表示時にリスト読み込み
+                }
+            }
+
+            // 未入金リストから入金報告タブへ遷移（顧客自動選択）
+            function goToPaymentForCustomer(customerId) {
+                switchTab('payment', customerId);
+            }
+
+            // ========================================
+            // 未入金リスト
+            // ========================================
+            function loadOverdueList() {
+                const container = document.getElementById('overdueListContainer');
+                container.innerHTML = '<p class="loading-text">読み込み中...</p>';
+
+                google.script.run
+                    .withSuccessHandler(function (list) {
+                        if (list.length === 0) {
+                            container.innerHTML = `
+                            <div class="no-overdue">
+                                <h3>✅ 未入金なし！</h3>
+                                <p>7日以上経過した未入金の顧客はいません</p>
+                            </div>
+                        `;
+                            return;
+                        }
+
+                        let html = '<div class="overdue-list">';
+                        list.forEach(function (item) {
+                            html += `
+                            <div class="overdue-item">
+                                <div class="customer-name">${item.customerName}</div>
+                                <div class="details">
+                                    <span>契約日: ${item.contractDate}</span>
+                                    <span class="days">${item.overdueDays}日経過</span>
+                                </div>
+                                <div class="details" style="margin-top: 4px;">
+                                    <span>ID: ${item.id}</span>
+                                </div>
+                                <button type="button" class="quick-payment-btn" onclick="goToPaymentForCustomer('${item.id}')">
+                                    💰 入金報告
+                                </button>
+                            </div>
+                        `;
+                        });
+                        html += '</div>';
+                        container.innerHTML = html;
+                    })
+                    .withFailureHandler(function (error) {
+                        container.innerHTML = '<p class="loading-text">エラー: ' + error + '</p>';
+                    })
+                    .getOverduePaymentList(currentSpreadsheetId);
+            }
+
+            // ========================================
+            // 入金報告タブ用関数
+            // ========================================
+
+            // H列の決済方法を読み込み
+            function loadPaymentMethodsForH() {
+                google.script.run
+                    .withSuccessHandler(function (methods) {
+                        const select = document.getElementById('paymentMethodSelect');
+                        methods.forEach(function (m) {
+                            const option = document.createElement('option');
+                            option.value = m;
+                            option.textContent = m;
+                            select.appendChild(option);
+                        });
+                    })
+                    .withFailureHandler(function (error) {
+                        console.error('決済方法取得エラー:', error);
+                    })
+                    .getPaymentMethodsH(currentSpreadsheetId);
+            }
+
+            // 入金日を今日にセット
+            function setPaymentTodayDate() {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('paymentDate').value = today;
+            }
+
+            // 入金フォーム送信
+            document.getElementById('paymentForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const formData = {
+                    customerId: document.getElementById('paymentCustomerId').value,
+                    paymentDate: document.getElementById('paymentDate').value,
+                    paymentAmount: Number(document.getElementById('paymentAmount').value),
+                    paymentMethod: document.getElementById('paymentMethodSelect').value,
+                    spreadsheetId: currentSpreadsheetId  // ★動的スプシID
+                };
+
+                document.getElementById('paymentSubmitBtn').disabled = true;
+                document.getElementById('paymentLoading').classList.add('show');
+
+                google.script.run
+                    .withSuccessHandler(function (result) {
+                        document.getElementById('paymentLoading').classList.remove('show');
+                        if (result.success) {
+                            document.getElementById('paymentFormSection').style.display = 'none';
+                            document.getElementById('paymentSuccessSection').classList.add('show');
+                        } else {
+                            alert(result.message);
+                            document.getElementById('paymentSubmitBtn').disabled = false;
+                        }
+                    })
+                    .withFailureHandler(function (error) {
+                        document.getElementById('paymentLoading').classList.remove('show');
+                        alert('エラーが発生しました: ' + error);
+                        document.getElementById('paymentSubmitBtn').disabled = false;
+                    })
+                    .submitPayment(formData);
+            });
+
+            // 入金フォームリセット
+            function resetPaymentForm() {
+                document.getElementById('paymentForm').reset();
+                setPaymentTodayDate();
+                document.getElementById('paymentFormSection').style.display = 'block';
+                document.getElementById('paymentSuccessSection').classList.remove('show');
+                document.getElementById('paymentSubmitBtn').disabled = false;
+            }
+        </script>
+
+        <!-- ID追加依頼モーダル -->
+        <div class="modal-overlay" id="idRequestModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📝 面談ID追加依頼</h3>
+                    <button type="button" class="modal-close" onclick="closeIdRequestModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- LINEグループ案内 -->
+                    <div class="line-group-info">
+                        <strong>📱 投稿先:</strong> 【営業部】再面談&担当変更依頼グル【いいねは管理のみ】
+                    </div>
+
+                    <!-- サンプル説明 -->
+                    <div class="sample-image-container">
+                        <p>👇 このような形式でLINEに投稿してください</p>
+                        <div
+                            style="background:#e8f4fd; padding:12px; border-radius:8px; font-size:0.85rem; line-height:1.6;">
+                            <div style="color:#1a73e8; font-weight:bold;">【面談シート追加】</div>
+                            <div>@阿部雅 さん</div>
+                            <div>@小松晃也 さん</div>
+                            <div>下記、お願いいたします！</div>
+                            <div style="margin-top:8px;">LINE名：○○○</div>
+                            <div>流入　：AI</div>
+                            <div>面談日：12/24</div>
+                            <div>時間　：17:00~</div>
+                        </div>
+                    </div>
+
+                    <!-- 入力フォーム -->
+                    <div class="modal-section">
+                        <label>LINE名 *</label>
+                        <input type="text" id="reqLineName" placeholder="例: koji">
+                    </div>
+
+                    <div class="modal-section">
+                        <label>流入 *</label>
+                        <select id="reqChannel">
+                            <option value="AI">AI</option>
+                            <option value="個別">個別</option>
+                            <option value="SNS">SNS</option>
+                            <option value="紹介">紹介</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-section">
+                        <label>面談日 *</label>
+                        <input type="date" id="reqDate">
+                    </div>
+
+                    <div class="modal-section">
+                        <label>時間 *</label>
+                        <input type="text" id="reqTime" placeholder="例: 17:00~">
+                    </div>
+
+                    <button type="button" class="generate-btn" onclick="generateRequestText()">
+                        📋 テキストを生成
+                    </button>
+
+                    <!-- 生成されたテキスト -->
+                    <div class="generated-text-container" id="generatedTextContainer">
+                        <pre id="generatedText"></pre>
+                        <button type="button" class="copy-btn" id="copyBtn" onclick="copyRequestText()">
+                            📋 コピーする
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // ========================================
+            // ID追加依頼モーダル
+            // ========================================
+            function openIdRequestModal() {
+                document.getElementById('idRequestModal').classList.add('show');
+                // 今日の日付をセット
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('reqDate').value = today;
+                // リセット
+                document.getElementById('reqLineName').value = '';
+                document.getElementById('reqTime').value = '';
+                document.getElementById('generatedTextContainer').classList.remove('show');
+                document.getElementById('copyBtn').textContent = '📋 コピーする';
+                document.getElementById('copyBtn').classList.remove('copied');
+            }
+
+            function closeIdRequestModal() {
+                document.getElementById('idRequestModal').classList.remove('show');
+            }
+
+            function generateRequestText() {
+                const lineName = document.getElementById('reqLineName').value.trim();
+                const channel = document.getElementById('reqChannel').value;
+                const date = document.getElementById('reqDate').value;
+                const time = document.getElementById('reqTime').value.trim();
+
+                if (!lineName || !date || !time) {
+                    alert('すべての項目を入力してください');
+                    return;
+                }
+
+                // 日付をフォーマット (YYYY-MM-DD → MM/DD)
+                const dateParts = date.split('-');
+                const formattedDate = parseInt(dateParts[1]) + '/' + parseInt(dateParts[2]);
+
+                const text = `【面談シート追加】
+@阿部雅 さん
+@小松晃也 さん
+下記、お願いいたします！
+
+LINE名：${lineName}
+流入　：${channel}
+面談日：${formattedDate}
+時間　：${time}`;
+
+                document.getElementById('generatedText').textContent = text;
+                document.getElementById('generatedTextContainer').classList.add('show');
+            }
+
+            function copyRequestText() {
+                const text = document.getElementById('generatedText').textContent;
+                navigator.clipboard.writeText(text).then(function () {
+                    const btn = document.getElementById('copyBtn');
+                    btn.textContent = '✅ コピーしました！';
+                    btn.classList.add('copied');
+                    setTimeout(function () {
+                        btn.textContent = '📋 コピーする';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                }).catch(function (err) {
+                    alert('コピーに失敗しました。手動でコピーしてください。');
+                });
+            }
+
+            // モーダル外クリックで閉じる
+            document.getElementById('idRequestModal').addEventListener('click', function (e) {
+                if (e.target === this) {
+                    closeIdRequestModal();
+                }
+            });
+
+            // ========================================
+            // 自社分割連絡モーダル
+            // ========================================
+            function openInstallmentModal() {
+                document.getElementById('installmentModal').classList.add('show');
+                // リセット
+                document.getElementById('instLineName').value = '';
+                document.getElementById('instName').value = '';
+                document.getElementById('instAccountName').value = '';
+                document.getElementById('instAccountReason').value = '';
+                document.getElementById('instRelation').value = '本人';
+                document.getElementById('instPhone').value = '';
+                document.getElementById('instGeneratedTextContainer').classList.remove('show');
+                document.getElementById('instCopyBtn').textContent = '📋 コピーする';
+                document.getElementById('instCopyBtn').classList.remove('copied');
+            }
+
+            function closeInstallmentModal() {
+                document.getElementById('installmentModal').classList.remove('show');
+            }
+
+            function generateInstallmentText() {
+                const lineName = document.getElementById('instLineName').value.trim();
+                const name = document.getElementById('instName').value.trim();
+                const accountName = document.getElementById('instAccountName').value.trim();
+                const accountReason = document.getElementById('instAccountReason').value.trim();
+                const relation = document.getElementById('instRelation').value;
+                const phone = document.getElementById('instPhone').value.trim();
+
+                if (!lineName || !name || !accountName || !phone) {
+                    alert('必須項目を入力してください');
+                    return;
+                }
+
+                let text = `@阿部雅
+@みやび
+
+LINE名：${lineName}
+名前：${name}
+口座名義 ${accountName}`;
+
+                if (accountReason) {
+                    text += `\n口座名義が本人と違う場合:(${accountReason})`;
+                }
+
+                text += `\n申込者と口座名義人の関係:${relation}
+登録電話番号：${phone}`;
+
+                document.getElementById('instGeneratedText').textContent = text;
+                document.getElementById('instGeneratedTextContainer').classList.add('show');
+            }
+
+            function copyInstallmentText() {
+                const text = document.getElementById('instGeneratedText').textContent;
+                navigator.clipboard.writeText(text).then(function () {
+                    const btn = document.getElementById('instCopyBtn');
+                    btn.textContent = '✅ コピーしました！';
+                    btn.classList.add('copied');
+                    setTimeout(function () {
+                        btn.textContent = '📋 コピーする';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                }).catch(function (err) {
+                    alert('コピーに失敗しました。手動でコピーしてください。');
+                });
+            }
+
+            // モーダル外クリックで閉じる
+            document.getElementById('installmentModal').addEventListener('click', function (e) {
+                if (e.target === this) {
+                    closeInstallmentModal();
+                }
+            });
+        </script>
+
+        <!-- 自社分割連絡モーダル -->
+        <div class="modal-overlay" id="installmentModal">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+                    <h3>💳 自社分割連絡</h3>
+                    <button type="button" class="modal-close" onclick="closeInstallmentModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- LINEグループ案内 -->
+                    <div class="line-group-info">
+                        <strong>📱 投稿先:</strong> 【自社分割】連絡グル
+                    </div>
+
+                    <!-- サンプル説明 -->
+                    <div class="sample-image-container">
+                        <p>👇 このような形式でLINEに投稿してください</p>
+                        <div
+                            style="background:#f3e8fd; padding:12px; border-radius:8px; font-size:0.85rem; line-height:1.6;">
+                            <div>@阿部雅</div>
+                            <div>@みやび</div>
+                            <div style="margin-top:8px;">LINE名：○○○</div>
+                            <div>名前：○○○</div>
+                            <div>口座名義 ○○○</div>
+                            <div>申込者と口座名義人の関係:本人</div>
+                            <div>登録電話番号：○○○</div>
+                        </div>
+                    </div>
+
+                    <!-- 入力フォーム -->
+                    <div class="modal-section">
+                        <label>LINE名 *</label>
+                        <input type="text" id="instLineName" placeholder="例: Hira">
+                    </div>
+
+                    <div class="modal-section">
+                        <label>名前 *</label>
+                        <input type="text" id="instName" placeholder="例: 平原拳悟">
+                    </div>
+
+                    <div class="modal-section">
+                        <label>口座名義 *</label>
+                        <input type="text" id="instAccountName" placeholder="例: ヒラハラケンゴ（カタカナ）">
+                    </div>
+
+                    <div class="modal-section">
+                        <label>口座名義が本人と違う場合の理由（任意）</label>
+                        <input type="text" id="instAccountReason" placeholder="例: 旧姓のまま">
+                    </div>
+
+                    <div class="modal-section">
+                        <label>申込者と口座名義人の関係 *</label>
+                        <select id="instRelation">
+                            <option value="本人">本人</option>
+                            <option value="配偶者">配偶者</option>
+                            <option value="親族">親族</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-section">
+                        <label>登録電話番号 *</label>
+                        <input type="tel" id="instPhone" placeholder="例: 08012345678">
+                    </div>
+
+                    <button type="button" class="generate-btn"
+                        style="background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);"
+                        onclick="generateInstallmentText()">
+                        📋 テキストを生成
+                    </button>
+
+                    <!-- 生成されたテキスト -->
+                    <div class="generated-text-container" id="instGeneratedTextContainer"
+                        style="border-color: #9b59b6;">
+                        <pre id="instGeneratedText"></pre>
+                        <button type="button" class="copy-btn" id="instCopyBtn" onclick="copyInstallmentText()">
+                            📋 コピーする
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+
+</body>
+
+</html>
