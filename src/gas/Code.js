@@ -257,3 +257,102 @@ function authenticateByPIN(pin) {
     return { success: false, message: 'PIN\u4e0d\u4e00\u81f4' };
   } catch (e) { return { success: false, message: e.toString() }; }
 }
+
+function getMasterDropdowns() {
+  const ss = openSsSafely(DATA_MASTER_SPREADSHEET_ID, 'Master Data');
+  const sheet = ss.getSheetByName(SHEET_MASTER_DROPDOWN) || ss.getSheetByName(SHEET_DROPDOWN);
+  if (!sheet) return { paymentMethods: [], paymentGrouping: {} };
+
+  const lastRow = sheet.getLastRow();
+  const data = sheet.getRange(2, 2, lastRow - 1, 1).getValues(); // Column B (Index 2 in 1-base, Index 1 in 0-base data)
+  // getRange(row, col, numRows, numCols) -> col 2 is B.
+
+  const paymentMethods = [];
+  data.forEach(r => {
+    const val = String(r[0]).trim();
+    if (val) paymentMethods.push(val);
+  });
+
+  return { paymentMethods: paymentMethods, paymentGrouping: {} };
+}
+
+function getStaffInfoBySheetId(targetId, providedSs) {
+  try {
+    const ss = openSsSafely(AUTH_MASTER_SPREADSHEET_ID, 'Auth Master');
+    const data = ss.getSheetByName(AUTH_MASTER_SHEET_NAME).getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      // Check ID (Col 2/Index 2) or URL (Col 1/Index 1)
+      let id = String(data[i][2]).trim();
+      if (!id && String(data[i][1]).includes('/d/')) id = String(data[i][1]).split('/d/')[1].split('/')[0];
+
+      if (id === targetId) {
+        return { name: data[i][0] };
+      }
+    }
+  } catch (e) { console.error(e); }
+  return { name: '不明なスタッフ' };
+}
+
+function getInitialData(spreadsheetId, staffName) {
+  return {
+    planList: getPlanList(),
+    customerList: getCustomerList(spreadsheetId, staffName),
+    paymentMethods: getMasterDropdowns().paymentMethods
+  };
+}
+
+function doPost(e) {
+  try {
+    const json = JSON.parse(e.postData.contents);
+    const action = json.action;
+    let result;
+
+    switch (action) {
+      case 'getInitialData':
+        result = getInitialData(json.spreadsheetId, json.staffName);
+        break;
+      case 'getCustomerList':
+        result = getCustomerList(json.spreadsheetId, json.staffName, null, json.targetGid);
+        break;
+      case 'getPaymentCustomerList':
+        result = getPaymentCustomerList(json.spreadsheetId);
+        break;
+      case 'getOverduePaymentList':
+        result = getOverduePaymentList(json.spreadsheetId);
+        break;
+      case 'submitReport':
+        result = submitReport(json);
+        break;
+      case 'submitPayment':
+        result = submitPayment(json);
+        break;
+      case 'authenticateByPIN':
+        result = authenticateByPIN(json.pin);
+        break;
+      case 'getPlanList':
+        result = getPlanList();
+        break;
+      case 'getPaymentMethods':
+        result = getPaymentMethods();
+        break;
+      default:
+        result = { error: 'Invalid action' };
+    }
+
+    // Wrapped Response for Wrapper Client
+    const response = { success: true, data: result };
+
+    return ContentService.createTextOutput(JSON.stringify(response))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    const errorResponse = { error: err.toString(), stack: err.stack };
+    return ContentService.createTextOutput(JSON.stringify(errorResponse))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({ status: 'active', version: 'v503_restored' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
