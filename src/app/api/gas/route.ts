@@ -12,15 +12,37 @@ export async function POST(request: Request) {
         const payload = JSON.stringify(body);
 
         // GASのフロー:
-        // 1. POST → script.google.com → 302リダイレクト
-        // 2. リダイレクト先(script.googleusercontent.com)はGETで応答を返す
-        // redirect:'follow'に任せるのが最もシンプルで確実
-        const response = await fetch(GAS_WEB_APP_URL, {
+        //   POST → script.google.com → 302 → リダイレクト先URLにレスポンスが埋め込まれる
+        //   リダイレクト先に GET → JSON応答
+        //
+        // Vercelのfetch(redirect:'follow')では302時にPOST→GETの変換やボディ消失で
+        // HTML応答になるケースがあるため、手動で302を処理する。
+
+        // Step 1: POSTを送信、リダイレクトは追跡しない
+        const postResponse = await fetch(GAS_WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: payload,
-            redirect: 'follow',
+            redirect: 'manual',
         });
+
+        let response: Response;
+
+        if (postResponse.status === 302 || postResponse.status === 307) {
+            // Step 2: リダイレクト先にGETでアクセス（GASの正規フロー）
+            const redirectUrl = postResponse.headers.get('location');
+            if (!redirectUrl) {
+                throw new Error('GAS returned redirect without Location header');
+            }
+            console.log('GAS Redirect ->', redirectUrl.slice(0, 80));
+            response = await fetch(redirectUrl, {
+                method: 'GET',
+                redirect: 'follow',
+            });
+        } else {
+            // リダイレクトなしで直接レスポンスが返った場合
+            response = postResponse;
+        }
 
         const contentType = response.headers.get('content-type');
         const text = await response.text();
@@ -40,26 +62,17 @@ export async function POST(request: Request) {
                 console.error('JSON Parse Error. Data:', text.slice(0, 500));
                 return NextResponse.json({
                     success: false,
-                    message: `GASから不正なJSONが返されました。構文エラーの可能性があります。 (Preview: ${text.slice(0, 100)})`
+                    message: `GASから不正なJSONが返されました。(Preview: ${text.slice(0, 100)})`
                 }, { status: 502 });
             }
         } else {
-            // HTML が返ってきた場合（権限エラーやログイン画面）
-            console.error('--- GAS returned HTML instead of JSON ---');
-            console.error('Status:', response.status);
-            console.error('URL:', response.url);
+            console.error('--- GAS returned non-JSON ---');
+            console.error('Status:', response.status, 'URL:', response.url);
             console.error('Preview:', text.slice(0, 500));
-
-            if (text.includes('google-login') || text.includes('Sign in') || response.status === 401) {
-                return NextResponse.json({
-                    success: false,
-                    message: `【致命的】Google認証エラーが発生したぜ。GASのデプロイ設定を「全員（Anyone）」に更新し、アクセス可能か確認してくれ！ (Status: ${response.status})`
-                }, { status: 403 });
-            }
 
             return NextResponse.json({
                 success: false,
-                message: `GASからHTMLが返されました。デプロイが無効か、URLが間違っている可能性があるぜ！ (Status: ${response.status}, URL: ${response.url?.slice(0, 60)}, Preview: ${text.slice(0, 80)})`
+                message: `GASからHTMLが返されました。(Status: ${response.status}, Preview: ${text.slice(0, 80)})`
             }, { status: 502 });
         }
 
