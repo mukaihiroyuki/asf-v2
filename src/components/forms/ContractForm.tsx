@@ -151,8 +151,9 @@ const ContractForm: React.FC<ContractFormProps> = ({ staffName, spreadsheetId, o
             setInterviewId('');
             setContractName('');
             setIsConfirmed(false);
-        } catch (error) {
-            alert('送信に失敗しました。');
+        } catch (error: any) {
+            console.error('submitReport Error:', error);
+            alert(`送信に失敗しました。\n\n${error.message || error}`);
         } finally {
             setIsSubmitting(false);
         }

@@ -26,7 +26,13 @@ export async function callGasApi(action: string, params: any = {}) {
             throw new Error(result.message || 'APIの実行に失敗しました。');
         }
 
-        return result.data;
+        // GAS内部関数(submitReport等)が返す {success: false, message} を検出
+        const data = result.data;
+        if (data && typeof data === 'object' && 'success' in data && data.success === false) {
+            throw new Error(data.message || 'GAS内部でエラーが発生しました。');
+        }
+
+        return data;
     } catch (error) {
         console.error('GAS API Call Failed:', error);
         throw error;

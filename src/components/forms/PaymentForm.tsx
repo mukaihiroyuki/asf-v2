@@ -63,8 +63,9 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ staffName, spreadsheetId, onS
             alert('入金報告が完了したぜ！');
             setCustomerId('');
             setAmount('');
-        } catch (error) {
-            alert('入金報告に失敗しました。');
+        } catch (error: any) {
+            console.error('submitPayment Error:', error);
+            alert(`入金報告に失敗しました。\n\n${error.message || error}`);
         } finally {
             setIsLoading(false);
         }
