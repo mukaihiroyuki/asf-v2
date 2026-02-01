@@ -11,39 +11,21 @@ export async function POST(request: Request) {
 
         const payload = JSON.stringify(body);
 
-        // GASは302リダイレクトを返す。redirect:'follow'だとPOST→GETに変換される環境がある。
-        // 手動でリダイレクトを追跡し、POSTメソッドとボディを維持する。
-        let response = await fetch(GAS_WEB_APP_URL, {
+        // GASのフロー:
+        // 1. POST → script.google.com → 302リダイレクト
+        // 2. リダイレクト先(script.googleusercontent.com)はGETで応答を返す
+        // redirect:'follow'に任せるのが最もシンプルで確実
+        const response = await fetch(GAS_WEB_APP_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: payload,
-            redirect: 'manual',
+            redirect: 'follow',
         });
-
-        // 302/307 リダイレクトを手動で追跡（最大5回）
-        let redirectCount = 0;
-        while ((response.status === 302 || response.status === 307) && redirectCount < 5) {
-            const redirectUrl = response.headers.get('location');
-            if (!redirectUrl) break;
-            console.log(`Redirect ${redirectCount + 1} -> ${redirectUrl.slice(0, 80)}`);
-            response = await fetch(redirectUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: payload,
-                redirect: 'manual',
-            });
-            redirectCount++;
-        }
-
-        // 最終リダイレクト先がGETを期待している場合（GASの最終応答）
-        if ((response.status === 302 || response.status === 307) && redirectCount >= 5) {
-            throw new Error('Too many redirects from GAS');
-        }
 
         const contentType = response.headers.get('content-type');
         const text = await response.text();
 
-        console.log('GAS Response Status:', response.status, 'ContentType:', contentType?.slice(0, 50));
+        console.log('GAS Response Status:', response.status, 'ContentType:', contentType?.slice(0, 50), 'BodyLen:', text.length);
 
         if (!response.ok) {
             console.error('GAS Server Error Response:', text.slice(0, 500));
@@ -65,6 +47,7 @@ export async function POST(request: Request) {
             // HTML が返ってきた場合（権限エラーやログイン画面）
             console.error('--- GAS returned HTML instead of JSON ---');
             console.error('Status:', response.status);
+            console.error('URL:', response.url);
             console.error('Preview:', text.slice(0, 500));
 
             if (text.includes('google-login') || text.includes('Sign in') || response.status === 401) {
@@ -76,7 +59,7 @@ export async function POST(request: Request) {
 
             return NextResponse.json({
                 success: false,
-                message: `GASからHTMLが返されました。デプロイが無効か、URLが間違っている可能性があるぜ！ (Status: ${response.status}, Preview: ${text.slice(0, 80)})`
+                message: `GASからHTMLが返されました。デプロイが無効か、URLが間違っている可能性があるぜ！ (Status: ${response.status}, URL: ${response.url?.slice(0, 60)}, Preview: ${text.slice(0, 80)})`
             }, { status: 502 });
         }
 
