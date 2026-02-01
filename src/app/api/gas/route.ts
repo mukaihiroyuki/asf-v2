@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw9QfWOtUfvmZzVl2FOobqoUlAv8KFr36AAhTEFCXNqa49mKG3fzmEfkFGQG4PT67zC/exec';
-// 最新デプロイID (Manual Deploy v138): AKfycbw9QfWO...
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbywQWQSo1b2Hjnq27zba1tmVn3N5ZQAi8r_Uq39uBnBz0l3Fr_Z01c2NxamLRDwX-bM/exec';
+// 最新デプロイID (v139 @157): AKfycbywQWQSo1b2...
 
 export async function POST(request: Request) {
     try {
@@ -9,20 +9,44 @@ export async function POST(request: Request) {
         console.log('--- Proxying Request to GAS ---');
         console.log('Action:', body.action);
 
-        const response = await fetch(GAS_WEB_APP_URL, {
+        const payload = JSON.stringify(body);
+
+        // GASは302リダイレクトを返す。redirect:'follow'だとPOST→GETに変換される環境がある。
+        // 手動でリダイレクトを追跡し、POSTメソッドとボディを維持する。
+        let response = await fetch(GAS_WEB_APP_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8',
-            },
-            body: JSON.stringify(body),
-            redirect: 'follow', // 重要：GASはリダイレクトを多用するぜ
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: payload,
+            redirect: 'manual',
         });
+
+        // 302/307 リダイレクトを手動で追跡（最大5回）
+        let redirectCount = 0;
+        while ((response.status === 302 || response.status === 307) && redirectCount < 5) {
+            const redirectUrl = response.headers.get('location');
+            if (!redirectUrl) break;
+            console.log(`Redirect ${redirectCount + 1} -> ${redirectUrl.slice(0, 80)}`);
+            response = await fetch(redirectUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: payload,
+                redirect: 'manual',
+            });
+            redirectCount++;
+        }
+
+        // 最終リダイレクト先がGETを期待している場合（GASの最終応答）
+        if ((response.status === 302 || response.status === 307) && redirectCount >= 5) {
+            throw new Error('Too many redirects from GAS');
+        }
 
         const contentType = response.headers.get('content-type');
         const text = await response.text();
 
+        console.log('GAS Response Status:', response.status, 'ContentType:', contentType?.slice(0, 50));
+
         if (!response.ok) {
-            console.error('GAS Server Error Response:', text);
+            console.error('GAS Server Error Response:', text.slice(0, 500));
             throw new Error(`GAS Error ${response.status}: ${text.slice(0, 100)}`);
         }
 
@@ -52,7 +76,7 @@ export async function POST(request: Request) {
 
             return NextResponse.json({
                 success: false,
-                message: `GASからHTMLが返されました。デプロイが無効か、URLが間違っている可能性があるぜ！ (Status: ${response.status}, Preview: ${text.slice(0, 50)})`
+                message: `GASからHTMLが返されました。デプロイが無効か、URLが間違っている可能性があるぜ！ (Status: ${response.status}, Preview: ${text.slice(0, 80)})`
             }, { status: 502 });
         }
 
