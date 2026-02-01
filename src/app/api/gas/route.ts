@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 // Node.jsランタイムを明示（Edge Runtimeのfetchはリダイレクト処理が異なる）
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30; // Vercel Pro: GASの書き込み処理に最大30秒許容
 
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw9QfWOtUfvmZzVl2FOobqoUlAv8KFr36AAhTEFCXNqa49mKG3fzmEfkFGQG4PT67zC/exec';
 
