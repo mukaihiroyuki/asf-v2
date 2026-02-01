@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbywQWQSo1b2Hjnq27zba1tmVn3N5ZQAi8r_Uq39uBnBz0l3Fr_Z01c2NxamLRDwX-bM/exec';
-// 最新デプロイID (v139 @157): AKfycbywQWQSo1b2...
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw9QfWOtUfvmZzVl2FOobqoUlAv8KFr36AAhTEFCXNqa49mKG3fzmEfkFGQG4PT67zC/exec';
+// デプロイ @155 (OAuth認可済み)
 
 export async function POST(request: Request) {
     try {
