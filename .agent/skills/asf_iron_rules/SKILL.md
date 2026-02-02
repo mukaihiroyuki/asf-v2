@@ -1,13 +1,15 @@
 ---
 name: asf_iron_rules
-description: ASF 2.0: 「三重の防御壁」と Next.js 開発の技術憲法。
+description: ASF 2.0: 「四重の防御壁」と不具合再発をゼロにする技術憲法。
 ---
 
-# ASF 2.0 Iron Rules: The Triple Safety Net
+# ASF 2.0 Iron Rules: The Quadruple Safety Net
 
-このドキュメントは、ASF 2.0 開発において AI エージェント（私）が遵守すべき**絶対的な設計原則**である。
+このドキュメントは、昨日までの「10時間の苦闘」を二度と繰り返さないために、AIエージェント（私）が遵守すべき**絶対的な設計・運用原則**である。
 
-## 1. 三重の防御壁 (The Triple Safety Net)
+## 1. 四重の防御壁 (The Quadruple Safety Net)
+
+従来の三層に加え、デバッグの迷走を防ぐ「透明性の壁」を追加した。
 
 1. **ポカヨケ (Frontend Validation)**:
    - **原則**: ユーザーが間違える余地を UI で物理的に封じる。
@@ -15,111 +17,77 @@ description: ASF 2.0: 「三重の防御壁」と Next.js 開発の技術憲法�
 
 2. **温慈のボット (Forgiving API Logic)**:
    - **原則**: バックエンド（GAS）は「不完全なデータ」も受け入れ、修復して保存する。
-   - **実装**: `TextFinder` による動的列特定。スプシの構造変更に耐える柔軟な書き込みロジック。
+   - **実装**: `TextFinder` による動的列特定。スライス位置に関わらず見出し行を 1-2 行目から再スキャン。
 
 3. **確定照合 (Human-in-the-loop Verification)**:
    - **原則**: 金額等の核心データは、システムだけで完結させず「人間の目」を通す。
    - **実装**: 「照合待ち」ステータスの導入。
 
-## 2. 開発の掟 (Technical Commandments)
+4. **鏡の壁 [NEW] (Error Transparency)**:
+   - **原則**: APIエラーを「API実行に失敗しました」の一言で隠さない。システム内部の悲鳴（エラー文）をそのまま正直に画面に晒す。
+   - **実装**: GAS側の `catch` ブロックで例外を文字列として返し、React上のトーストやダイアログにそのまま表示する。
 
-- **Atomic Design**: 2000行のモノリスは死罪。UI は React コンポーネントに細分化し、責務を分離する。
-- **Stateless Communication**: `google.script.run` に依存せず、Vercel ↔ GAS 間は標準的な **JSON API (fetch)** で通信する。
-- **UX > Tech**: テクノロジーの凄さより、営業マンが「1秒で終わる」体験を優先する。
-- **Always Seed**: 重要な意思決定や変更は、必ず Obsidian の `Seeds` または `PROJECT_CONTEXT.md` に記録する。
+---
+
+## 2. 命綱：不具合再発防止プロトコル (Critical Lifeboat Protocols)
+
+昨日の10時間の原因となった 5つの罠への対策。
+
+### A. 幽霊知らずの原則 (Version Integrity)
+- **掟**: AIが修正したコードが、今スマホで見ているアプリの裏で「本当に動いているか」を疑え。
+- **実装**: `getInitialData` の応答に必ず `systemVersion` (例: v2024.0124.0600) を含める。画面に出てくるバージョンが自分の作業した日付・時刻と一致しないなら、それは「修正された後のコード」ではない。
+
+### B. 封筒（Params）の解体新書 (JSON Nesting Standards)
+- **掟**: フロントエンド (Vercel) はデータを `params` オブジェクトに包んで送る。
+- **実装**: GAS側の `doPost` では、必ず最初に `const p = json.params || {};` と封筒を解体してから中身 (spreadsheetId等) にアクセスせよ。直撃アクセス (`json.spreadsheetId`) は undefined エラーの元である。
+
+### C. 倉庫の限界（Cache Size）への配慮 (Robust Handling)
+- **掟**: データ取得が成功しても、キャッシュ保存 (`CacheService`) でコケることがある。
+- **実装**: `cache.put` は必ず `try-catch` で囲め。キャッシュ保存の失敗（Argument too large）で、データ取得の成功を台無しにしてはならない。
+
+### D. 空行スルーの鉄則 (Trailing Empty Rows)
+- **掟**: スプシの末尾にある「見えない空行」を実データとして読み取ってはならない。
+- **実装**: `lastRow` 依存のレンジ取得をやめ、`getDataRange().getValues()` で「実際にデータが入っている全範囲」を取得せよ。
+
+### E. デプロイURLの不動化 (Manual Deploy Priority)
+- **掟**: `clasp push` は下書き保存に過ぎない上、権限を勝手にリセットすることがある。
+- **実装**: 最終的なデプロイは必ず GAS 画面上の **「デプロイを管理」 > 「新しいバージョン」** で行い、URL権限が「全員(Anyone)」であることを自ら確認せよ。
+
+### F. 鉄壁の選抜・除外の掟 (Business Logic Safeguards) [NEW]
+- **掟**: 「未入金リスト」は単なる数字の計算ではない。営業現場の「信義」を反映せよ。
+- **実装**: 
+    - **除外対象**: 「クーリングオフ」「入金前解除」「却下」「キャンセル」「入金前解約」のステータスを持つ顧客は、未入金があってもリストに表示してはならない（ノイズ除去）。
+    - **広角スキャンの掟**: スプシの見出し（結果、ステータス、判定など）は、時に AU 列のような遠い場所にある。`getCustomerList` や `getOverduePaymentList` では、必ず 100 列以上の広範な範囲をスキャンし、情報の見落とし（節穴）を防げ。
+    - **情報の統合（Enrichment）**: 同一 ID が複数タブ（面談計入と顧客リストなど）に存在する場合、ステータスが「空欄」の行に惑わされるな。Map等を用い、いずれかの行に確定したビジネス結果（結果列の値）が存在するなら、それを全行程で優先採用せよ。
+    - **並び順**: 常に「最新の案件（放置期間が短いもの）」が最上部に来るように昇順（1日→10日...）にソートせよ。
+    - **金額の解釈**: カンマ文字（,）を含む金額文字列も正しく数値変換 (`parsePrice`) し、1円のズレも許さず判定せよ。
+
+
+---
 
 ## 3. システム識別子 (Ground Truth)
 
 - **Master DB (全面談合算)**: `1xnN8CSq-9DyyhwJZayHkoJKBkcR9nGRZEsSr_r6SLfg`
 - **Auth Master (認証マスタ)**: `1bKiuaQQOBijQSVU9oLtvxgoYE2Xb_9klwWaJ5YLs4UQ`
-- **GAS Web App URL (Primary)**: `https://script.google.com/macros/s/AKfycbwSlxiqkUSSElraQ-nVXRWsWMwVhkXcpphkN7OkgVqBia9xgIvid0OI3UcZS9SC8u2t/exec`
-  - ※ 営業マンのPIN認証、および担当者ごとの個別シートIDを管理。
-  - **🚨注意**: IDの大文字小文字を1文字でも間違えると接続不能になるため、編集時は必ずコピペすること。
+- **GAS Web App URL**: `https://script.google.com/macros/s/AKfycbw9QfWOtUfvmZzVl2FOobqoUlAv8KFr36AAhTEFCXNqa49mKG3fzmEfkFGQG4PT67zC/exec` (Manual v138+)
+- **🚨警告**: これ以外の URL を Vercel にセットしてはならない。
 
-## 4. 開発の掟 (Phase 2 Standards)
+---
 
-8. **爆速・個別ファーストの維持 (Sub-Second Performance)**:
-   データ取得は「個別スプシ全件 + マスタ数件スライス」のハイブリッド方式を絶対とし、集約API (`getInitialData`) で通信を1回に絞ること。
-9. **ID・パスの堅牢性の死守 (Robust ID Handling)**:
-    `SpreadsheetApp.openById` 等に渡すIDは必ず `trim()` し、空文字や無効なIDによる「Invalid argument」エラーを未然に防ぐガードロジック (`openSsSafely`) を全箇所に実装せよ。
-10. **現場への「確実な反映」 (Guaranteed Reflection)**:
-   Next.js や Tailwind の開発において、**「コードは正しいのに画面が変わらない」** 際のトラブルシューティング手順（Node全滅、.next削除、ブラウザキャッシュクリア）を絶対とし、AIは画像とコードを比較して不一致を自ら検知すること。
-11. **最新優先の原則 (Newest-First Retrieval)**:
-   スプレッドシートのデータ取得は必ず **「最下行から上へ（Bottom-to-Top）」** 向かってスキャンせよ。これにより、大規模シートでの最新データの取得漏れを防ぎ、常に営業マンの「今の作業」を最優先でリストの上部に表示せよ。
-12. **旧システムの「抹消」と「案内」 (System Deprecation)**:
-   新システムへの移行が完了した際は、旧システムの入口（doGet/doPost）を必ず「移行案内」に書き換えよ。中途半端に機能を残すと、現場で旧旧データの混在を招き、致命的な混乱を引き起こす。
-13. **GASデプロイIDの「狙い撃ち」 (GAS Deployment Targeting)**:
-   `clasp push` は単なる「下書き保存」である。ウェブアプリの更新時は必ず `clasp deployments` でユーザーが実際に踏んでいるURLのIDを特定し、そのIDに対して `clasp deploy -i <ID>` を実行して「本番反映」せよ。
-14. **涅槃の神速 (Nirvana Speed Engine)**:
-    スプレッドシートの全件読み込み禁止。最新 **500〜600行** の限定スキャン（Slicing）を標準とし、サーバーレスポンス1秒以内を死守せよ。
-    - **🚨鉄則**: スライス位置に関わらず、項目の特定（Headers）は必ずシートの **1〜2行目** を直接参照して行え。これにより、データ増大による「項目見失い」を100%排除せよ。
+## 4. 開発の行動規範 (Behavioral Standards)
 
-15. **個別主権の原則 (Individual Sovereignty)**:
-    マスタ合算は補完に過ぎない。営業マンが手元で入力した「個別シートの最新データ」が全ての真実（Truth）の頂点にある。取得時は個別スプシを優先せよ。
-    - **🚨鉄則**: シート名の揺れ（「顧客リスト」vs「面談記入シート」等）を許容する **Fuzzy Search** を実装し、現場のあらゆる命名規則に対応せよ。
+1. **爆速の維持 (Sub-Second Response)**: 
+   全件読み込みによる 1 秒超えは禁止。`getDataRange` は使いつつも、ループ内での API 叩き（`getSheetByName` 等）を最小化せよ。
 
-16. **鉄壁の選抜方式 (Ironclad Inclusion Filter)**:
-    未入金リスト等の重要アラートは、**「除外」ではなく「選抜（Inclusion）」** で抽出せよ。
-    - **原則**: 「成約」「契約済み(入金待ち)」など、許可されたステータスに完全一致するものだけを通し、それ以外のノイズ（クーリングオフ、キャンセル等）を物理的に遮断せよ。
-    - **表記揺れの吸収**: 名前の比較時は必ずスペース除去・半角全角の正規化を行い、現場の入力ミスによる「紐付け失敗」を防げ。
-    
-17. **GASデプロイの絶対法則 (GAS Deployment Law)**:
-    「GAS単体の修正であっても、Next.js（アプリ側）でURLや呼び出し方を変えたなら、必ずVercelへのデプロイ（git push）が必要である」という因果関係を忘れるな。
-    - **GAS**: `doPost` 等のエントリーポイント変更は `clasp push` -> `clasp deploy`。
-    - **Next.js**: 呼び出し元の変更は `git push` -> `Vercel Build`。
-    この**両輪が揃って初めて「修正完了」**となる。片手落ちは厳禁。
+2. **Atomic Design & Separation**:
+   2013行のモノリスは死罪。UI、ロジック、API クライアントを明確に分離し、React キャッシュ等による「画面が変わらない」問題に対しては `taskkill` によるハードリセットを自律的に行え。
 
-18. **GAS 聖域の単一化 (Single Master Code.js)**:
-    - **原則**: GAS プロジェクト内に複数の `.gs` ファイルを置くな。
-    - **理由**: GAS は全ファイルのグローバル変数を共有するため、関数名（`onOpen`, `doPost` 等）の重複が HTML エラーを引き起こす。
-    - **実装**: API とロジックはすべて単体の `Code.js` に集約せよ。既存の別ファイルは物理的に削除し、常に「単一の窓口」を維持せよ。
+3. **現場最優先 (Live Environment First)**:
+   ローカルで動いているからといって「直りました」と言うな。Vercel に `git push` し、デプロイが完了したことを確認してから、ユーザーに「リロード」を促せ。
 
-19. **外部アクセスの開放 (Anyone Access)**:
-    - **原則**: Vercel (Next.js) から GAS を呼び出す場合、公開設定を **「全員（Anyone）」** にせよ。
-    - **注意**: `executeAs: "USER_DEPLOYING"` かつ `access: "ANYONE_ANONYMOUS"` でなければならない。設定不備は 403 Forbidden の原因となる。
+---
 
-20. **デプロイメントの衛生管理 (Deployment Hygiene)**:
-    - **原則**: Google のデプロイ制限（20枠）を常に意識せよ。
-    - **手順**: 枠が埋まったら古いデプロイを `clasp undeploy` で削除し、中野さんの踏んでいる URL ID を狙い撃ちして `clasp deploy -i <ID>` せよ。
+## 5. 焦点の峻別 (The Focus Principle)
 
-
-### 7. GAS 聖域の防衛と「現場」の規律 (GAS Safeguards & Context)
-
-18. **GAS 聖域の単一化 (Single Master Code.js)**:
-    - **原則**: GAS プロジェクト内に複数の `.gs` ファイルを置くな。関数の重複が HTML エラーを引き起こす。API とロジックはすべて単体の `Code.js` に集約せよ。
-
-19. **外部アクセスの開放 (Anyone Access)**:
-    - **原則**: 公開設定は「全員（Anyone）」「自分として実行」を死守せよ。設定不備は 403 Forbidden の原因となる。
-
-20. **デプロイメントの衛生管理 (Deployment Hygiene)**:
-    - **原則**: Google のデプロイ制限（20枠）を `clasp undeploy` で回避し、本番 URL の ID を `clasp deploy -i <ID>` で狙い撃ちせよ。
-
-21. **「個別シート」と「マスタ」の峻別 (Source Isolation)**:
-    - **鉄則**: 契約フォームと入金フォームでは、取得ソースのタブ名が異なる。
-      - 契約用：`顧客リスト` または `面談記入`
-      - 入金用：`入金管理リスト` または `入金` を含む全タブ
-    - **ポカヨケ**: リストが空だからといって、安易に全社員共用データをフォールバックで出すな。それは担当者フィルタリングを破壊し、現場に混乱を招く「禁じ手」である。
-
-22. **見出し行の自動探索 (Fuzzy Header Detection)**:
-    - 行見出しが 1行目か 2行目か、あるいは項目名にスペースが混じっているかは「現場の自由」である。コード側で `findIndex` と `includes` を駆使し、物理的な位置に依存しない探索を行え。
-
-Next.js や Tailwind の開発において、**「コードは正しいのに画面が変わらない」** という事態は、AIと人間の信頼関係を致命的に損なう。これを防ぐため、以下の手順を「技術憲法」に刻む。
-
-- **AIの自己検閲 (Mirror Check)**: 
-  ユーザーから送られたスクリーンショットと、自分がコミットした最新のクラス名（`text-xl` → `text-3xl` 等）を必ず比較し、**1ピクセルも変わっていない**と判断したら、「反映されていませんね」と自ら認め、即座にリセット手順を提案せよ。
-- **ゴリ押し再起動 (Hard Reset Ritual)**:
-  差分修正で解決しないキャッシュ問題（HMRの沈黙）が疑われる場合、以下の手順を**AIが自律的かつ迷わず実行**せよ：
-  1. `netstat -ano | findstr :3000` で死に損ないのプロセスID（PID）を特定。
-  2. `taskkill /F /PID <特定したPID>` で完膚なきまでに沈める。
-  3. `npm run dev` でクリーンな状態でエンジンを再始動する。
-- **「現場」の誤認防止 (Live vs Local Clarity)**:
-  ユーザーが localhost ではなく Vercel 等の「本番URL」を見ている可能性を常に疑え。画面が変わらないと言われたら、まず最初に「いま見ているブラウザのURL」を画像やテキストで確認させ、自分の作業ディレクトリと一致しているかを照合せよ。
-
-## 6. 焦点の峻別 (The Focus Principle)
-
-- **文脈の独立性 (Project Isolation)**: 
-  エディタに別のプロジェクト（例：キメラの卵 vs Addness）が同時に開かれていたとしても、対話中のプロジェクトの境界を1mmも越えてはならない。中央画面の視覚情報に惑わされず、**「今チャットで議論しているプロジェクトの Cwd（カレントディレクトリ）」**に全神経を集中せよ。
-- **お節介の禁止 (No Unauthorized Expansion)**:
-  隣のプロジェクトの不備（リンク切れ等）を見つけたとしても、許可なく修正を試みることは、相棒の集中力を削ぐ「ロジック破壊」である。発見した場合は対話で「報告」し、合意を得るステップを絶対に飛ばすな。
-- **対話最優先 (Dialogue over Action)**:
-  コードを走らせる前に、相棒の「違和感」が解消されたかを確認せよ。プログラムの正解よりも、相棒の抱く「おかしな点」の解明が先決である。
+- **文脈の独立性 (Project Isolation)**: キメラの卵と Addness 等、別プロジェクトを混同するな。カレントディレクトリが全てである。
+- **対話最優先 (Dialogue over Action)**: コードを走らせる前に、相棒の「違和感（ヒント）」を聞け。そこには、技術的な答えよりも早く正解に辿り着く「直感」が隠されている。

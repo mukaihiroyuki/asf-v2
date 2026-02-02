@@ -5,13 +5,22 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30; // Vercel Pro: GASの書き込み処理に最大30秒許容
 
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbywQWQSo1b2Hjnq27zba1tmVn3N5ZQAi8r_Uq39uBnBz0l3Fr_Z01c2NxamLRDwX-bM/exec';
+const GAS_WEB_APP_URL = process.env.GAS_WEB_APP_URL;
 
 export async function POST(request: Request) {
+    let action = 'unknown';
     try {
+        if (!GAS_WEB_APP_URL) {
+            console.error('[GAS Proxy] GAS_WEB_APP_URL is not set');
+            return NextResponse.json(
+                { success: false, message: '環境変数 GAS_WEB_APP_URL が設定されていません' },
+                { status: 500 }
+            );
+        }
+
         const body = await request.json();
-        const action = body.action;
-        console.log('[GAS Proxy] Action:', action);
+        action = body.action;
+        console.log(`[GAS Proxy] → action=${action}`);
 
         const payload = JSON.stringify(body);
 
@@ -61,7 +70,7 @@ export async function POST(request: Request) {
 
         const contentType = finalRes.headers.get('content-type') || '';
         const text = await finalRes.text();
-        console.log('[GAS Proxy] Final Status:', finalRes.status, 'CT:', contentType.slice(0, 40), 'Len:', text.length);
+        console.log(`[GAS Proxy] ← action=${action} status=${finalRes.status} ct=${contentType.slice(0, 40)} len=${text.length}`);
 
         if (!finalRes.ok) {
             throw new Error(`GAS Error ${finalRes.status}: ${text.slice(0, 100)}`);
@@ -84,7 +93,7 @@ export async function POST(request: Request) {
         }, { status: 502 });
 
     } catch (error: any) {
-        console.error('[GAS Proxy] Error:', error);
+        console.error(`[GAS Proxy] ERROR action=${action}`, error.message || error);
         return NextResponse.json(
             { success: false, message: error.message || 'Internal Server Error' },
             { status: 500 }

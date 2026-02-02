@@ -15,17 +15,20 @@ interface OverdueCustomer {
 const OverdueList: React.FC = () => {
     const [overdueCustomers, setOverdueCustomers] = useState<OverdueCustomer[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchList = useCallback(async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const sid = localStorage.getItem('asf_spreadsheet_id');
             if (sid) {
                 const list = await gasApi.getOverduePaymentList(sid);
                 setOverdueCustomers(list);
             }
-        } catch (error) {
-            console.error('Overdue Fetch Failed:', error);
+        } catch (err: any) {
+            console.error('Overdue Fetch Failed:', err);
+            setError(err.message || '読み込みに失敗したぜ。');
         } finally {
             setIsLoading(false);
         }
@@ -41,10 +44,19 @@ const OverdueList: React.FC = () => {
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                     未入金アラート（即時検知）
                 </p>
-                <p className="text-xs text-rose-500 font-black">
-                    {overdueCustomers.length} 件のアラート
-                </p>
+                <div className="text-right flex items-center gap-3">
+                    {error && <span className="text-[10px] text-rose-500 font-black animate-pulse">ERROR!</span>}
+                    <p className="text-xs text-rose-500 font-black">
+                        {overdueCustomers.length} 件のアラート
+                    </p>
+                </div>
             </div>
+
+            {error && (
+                <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs font-bold text-rose-600 animate-in slide-in-from-top-2">
+                    🚨 APIエラー: {error}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 gap-3">
                 {isLoading ? (

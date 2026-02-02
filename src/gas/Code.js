@@ -11,7 +11,8 @@ function cleanStr(s) {
 
 function isMatchFuzzy(val, list) {
   const target = cleanStr(val);
-  return list.some(item => cleanStr(item) === target);
+  if (!target) return false;
+  return list.some(item => target.includes(cleanStr(item)));
 }
 
 
@@ -84,13 +85,9 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs, targetGid
   const cacheKey = `v2.6_cust_list_${spreadsheetId}_${staffSuffix}`;
   const cache = CacheService.getUserCache();
 
-  // Cache killed for debugging
-  /*
-  const cached = cache.get(cacheKey);
-  if (cached) { try { return JSON.parse(cached); } catch (e) { } }
-  */
-
-  const customerMap = {}; // Robust Map for status enrichment
+  // Build array directly in reverse order (newest first) - avoid Object key ordering issues
+  const customers = [];
+  const seenIds = new Set();
 
   try {
     const primaryNames = ['\u9867\u5ba2\u30ea\u30b9\u30c8', '顧客リスト', '\u9762\u8ac7\u8a18\u5165', '面談記入'];
@@ -111,6 +108,7 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs, targetGid
 
     log(`Sheets: ${targetSheets.map(s => s.getName()).join(', ')}`);
 
+    // PASS 1: Iterate bottom-to-top to build newest-first list
     for (const s of targetSheets) {
       const lastRow = s.getLastRow();
       if (lastRow <= 1) continue;
@@ -130,7 +128,8 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs, targetGid
       if (colId === -1 && colId2 === -1) continue;
 
       const gid = s.getSheetId();
-      for (let j = dataStartIdx; j < allData.length; j++) {
+      // Iterate from BOTTOM to TOP → newest rows added to array first
+      for (let j = allData.length - 1; j >= dataStartIdx; j--) {
         const row = allData[j];
         let valId = String(row[colId] || '').trim();
         if ((!valId || valId === '') && colId2 !== -1) valId = String(row[colId2] || '').trim();
@@ -139,25 +138,28 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs, targetGid
 
         const foundStatus = colStatus !== -1 ? String(row[colStatus] || '').trim() : '';
 
-        if (!customerMap[valId]) {
-          customerMap[valId] = {
+        if (!seenIds.has(valId)) {
+          seenIds.add(valId);
+          customers.push({
             id: valId,
             name: String(row[colName] || '名無し'),
             link: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${gid}&range=${j + 1}:${j + 1}`,
             status: foundStatus,
             date: ''
-          };
+          });
         } else {
           // STATUS ENRICHMENT: If previous tab had no status, but this one does, UPDATE it.
-          if (!customerMap[valId].status && foundStatus) {
-            customerMap[valId].status = foundStatus;
+          if (foundStatus) {
+            const existing = customers.find(c => c.id === valId);
+            if (existing && !existing.status) {
+              existing.status = foundStatus;
+            }
           }
         }
       }
     }
   } catch (e) { log(`Error: ${e.toString()}`); }
-
-  const customers = Object.values(customerMap);
+  // No sorting needed - array is already newest-first
 
   if (customers.length === 0) {
     customers.push({ id: 'DBG0', name: '⚠️ 読込失敗: デバッグログ表示', link: '' });
@@ -246,8 +248,8 @@ function getOverduePaymentList(spreadsheetId) {
     const statusMap = {};
     customerList.forEach(c => { if (c.id) statusMap[c.id] = c.status; });
 
-    // Finalize Exclusions List (Business Rule)
-    const EXCLUDE = ['クーリングオフ', '入金前解除', '却下', 'キャンセル', '入金前解約', '契約前辞退', '非成約', '面談前キャンセル'];
+    // Whitelist: only include these statuses (safer than blacklist)
+    const INCLUDE = ['成約', '契約済み(入金待ち)', '契約済み'];
 
     const overdue = [];
     for (let i = allData.length - 1; i >= offset; i--) {
@@ -257,18 +259,21 @@ function getOverduePaymentList(spreadsheetId) {
 
       if (!id || id === 'ID' || id === '面談ID') continue;
 
-      // Status check - Robust Fuzzy Match (Ignore Spacing/Full-width)
+      // Status check - Only include whitelisted statuses
       const currentStatus = statusMap[id] || '';
-      if (isMatchFuzzy(currentStatus, EXCLUDE)) continue;
+      if (!isMatchFuzzy(currentStatus, INCLUDE)) continue;
 
       const amount = parsePrice(row[colAmount]);
       const paid = parsePrice(row[colPaid]);
       const dateVal = row[colDate] || '';
 
+      // Skip entries with no contract date
+      if (!dateVal || dateVal === '') continue;
+
       // If amount > paid, it is an alert
       if (amount > paid) {
         try {
-          const d = (dateVal && dateVal !== '') ? new Date(dateVal) : new Date();
+          const d = new Date(dateVal);
           const diff = Math.floor((new Date() - d) / 86400000);
           overdue.push({
             id,
@@ -442,14 +447,15 @@ function getInitialData(spreadsheetId, staffName) {
     paymentCustomerList: getPaymentCustomerList(spreadsheetId), // ADDED
     paymentMethods: getMasterDropdowns().paymentMethods,
     paymentMethodsH: getMasterDropdowns().paymentMethods, // ADDED for PaymentForm
-    systemVersion: 'v2026.0124.0830_SCAN_RANGE_FIX' // UPDATED VERSION
+    systemVersion: 'v2026.0202.REVERSE_ORDER' // UPDATED VERSION
   };
 }
 
 function doPost(e) {
+  let action = 'unknown';
   try {
     const json = JSON.parse(e.postData.contents);
-    const action = json.action;
+    action = json.action;
     const p = json.params || {}; // Extract params from nested object
     let result;
 
@@ -492,8 +498,8 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
-    // Return standard error format for client
-    const errorResponse = { success: false, message: `GAS Error: ${err.toString()}` };
+    console.error(`[doPost] action=${action} error=${err.message || err} stack=${err.stack || ''}`);
+    const errorResponse = { success: false, message: 'サーバーエラーが発生しました。しばらくしてから再試行してください。' };
     return ContentService.createTextOutput(JSON.stringify(errorResponse))
       .setMimeType(ContentService.MimeType.JSON);
   }
