@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30; // Vercel Pro: GASの書き込み処理に最大30秒許容
 
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw9QfWOtUfvmZzVl2FOobqoUlAv8KFr36AAhTEFCXNqa49mKG3fzmEfkFGQG4PT67zC/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbywQWQSo1b2Hjnq27zba1tmVn3N5ZQAi8r_Uq39uBnBz0l3Fr_Z01c2NxamLRDwX-bM/exec';
 
 export async function POST(request: Request) {
     try {

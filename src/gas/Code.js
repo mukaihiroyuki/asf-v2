@@ -2,6 +2,19 @@
 // ASF 2.0 Global Settings
 // ========================================
 
+/** GLOBAL LOG FOR DEBUGGING */
+function log(msg) { console.log(msg); }
+
+function cleanStr(s) {
+  return String(s || '').trim().replace(/\s+/g, '').toLowerCase();
+}
+
+function isMatchFuzzy(val, list) {
+  const target = cleanStr(val);
+  return list.some(item => cleanStr(item) === target);
+}
+
+
 const DATA_MASTER_SPREADSHEET_ID = '1xnN8CSq-9DyyhwJZayHkoJKBkcR9nGRZEsSr_r6SLfg';
 const AUTH_MASTER_SPREADSHEET_ID = DATA_MASTER_SPREADSHEET_ID;
 
@@ -33,6 +46,14 @@ function findColIndex(headers, possibleNames) {
   return -1;
 }
 
+function parsePrice(val) {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return val;
+  const cleaned = String(val).replace(/[\\,¥]/g, '').trim();
+  const num = Number(cleaned);
+  return isNaN(num) ? 0 : num;
+}
+
 // FIX: Added missing helper function
 function getSheetFuzzy(ss, name) {
   if (!ss) return null;
@@ -53,24 +74,26 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs, targetGid
   const debugLogs = [];
   const log = (msg) => { debugLogs.push(String(msg)); };
 
-  log(`[Start v503] Staff: ${providedStaffName}`);
+  log(`[Start] Staff: ${providedStaffName}`);
 
-  const ss = providedSs || openSsSafely(spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
+  const ss = providedSs || openSsSafely(spreadsheetId, '個別シート');
   let staffName = providedStaffName;
   if (!staffName) staffName = getStaffInfoBySheetId(spreadsheetId, ss).name;
 
-  const cacheKey = 'customer_list_v503_' + spreadsheetId;
+  const staffSuffix = staffName || 'ALL';
+  const cacheKey = `v2.6_cust_list_${spreadsheetId}_${staffSuffix}`;
   const cache = CacheService.getUserCache();
 
-  // Cache disabled for debugging
-  // const cached = cache.get(cacheKey);
-  // if (cached) { try { return JSON.parse(cached); } catch (e) { } }
+  // Cache killed for debugging
+  /*
+  const cached = cache.get(cacheKey);
+  if (cached) { try { return JSON.parse(cached); } catch (e) { } }
+  */
 
-  const customers = [];
-  const processedIds = new Set();
+  const customerMap = {}; // Robust Map for status enrichment
 
   try {
-    const primaryNames = ['\u9867\u5ba2\u30ea\u30b9\u30c8', '\u9762\u8ac7\u8a18\u5165'];
+    const primaryNames = ['\u9867\u5ba2\u30ea\u30b9\u30c8', '顧客リスト', '\u9762\u8ac7\u8a18\u5165', '面談記入'];
     let targetSheets = primaryNames.map(name => getSheetFuzzy(ss, name)).filter(s => s !== null);
 
     if (targetGid) {
@@ -81,59 +104,74 @@ function getCustomerList(spreadsheetId, providedStaffName, providedSs, targetGid
     if (targetSheets.length === 0) {
       log('Warn: No named sheets found. Scanning all...');
       for (const sh of ss.getSheets()) {
-        const hVal = sh.getRange(1, 1, 2, 5).getValues().map(r => r.join('')).join('');
+        const hVal = sh.getRange(1, 1, 2, 100).getValues().map(r => r.join('')).join('');
         if (hVal.includes('\u9762\u8ac7ID')) targetSheets.push(sh);
       }
     }
 
-    log(`Sheets found: ${targetSheets.length}`);
+    log(`Sheets: ${targetSheets.map(s => s.getName()).join(', ')}`);
 
     for (const s of targetSheets) {
       const lastRow = s.getLastRow();
-      if (lastRow <= 1) { log(`Skip ${s.getName()} (empty)`); continue; }
+      if (lastRow <= 1) continue;
 
-      const fetchCount = 600;
-      const startRow = Math.max(1, lastRow - fetchCount + 1);
-      const sData = s.getRange(startRow, 1, Math.min(fetchCount, lastRow), s.getLastColumn()).getValues();
-      const hData = s.getRange(1, 1, 2, s.getLastColumn()).getValues();
+      const allData = s.getDataRange().getValues();
+      const hData = allData.slice(0, 2);
+      let headers = hData[1].join('').includes('面談ID') ? hData[1] : hData[0];
+      let dataStartIdx = (hData[1].join('').includes('面談ID') ? 2 : 1);
 
-      let headers = hData[1].join('').includes('\u9762\u8ac7ID') ? hData[1] : hData[0];
-      let dataStartIdx = (startRow === 1) ? (hData[1].join('').includes('\u9762\u8ac7ID') ? 2 : 1) : 0;
+      const colId = findColIndex(headers, ['面談ID', 'ID']);
+      const colId2 = findColIndex(headers, ['顧客ID', 'CID']);
+      const colName = findColIndex(headers, ['LINE名', '名前', '氏名', '氏名(カナ)']);
+      const colStatus = findColIndex(headers, ['結果', 'ステータス', '状態', '判定']);
 
-      const colId = findColIndex(headers, ['\u9762\u8ac7ID', 'ID']);
-      const colName = findColIndex(headers, ['\u540d\u524d', '\u6c0f\u540d']);
+      log(`[${s.getName()}] ID:${colId} StatusCol:${colStatus}`);
 
-      log(`[${s.getName()}] ID:${colId} Name:${colName}`);
-
-      if (colId === -1) continue;
+      if (colId === -1 && colId2 === -1) continue;
 
       const gid = s.getSheetId();
-      for (let j = sData.length - 1; j >= dataStartIdx; j--) {
-        const row = sData[j];
-        const valId = String(row[colId] || '').trim();
-        if (valId && valId !== '' && valId !== '\u9762\u8ac7ID' && valId !== 'ID' && !processedIds.has(valId)) {
-          // BYPASS FILTER STRICTLY (ALL DATA)
-          customers.push({
+      for (let j = dataStartIdx; j < allData.length; j++) {
+        const row = allData[j];
+        let valId = String(row[colId] || '').trim();
+        if ((!valId || valId === '') && colId2 !== -1) valId = String(row[colId2] || '').trim();
+
+        if (!valId || valId === '面談ID' || valId === 'ID' || valId === '顧客ID') continue;
+
+        const foundStatus = colStatus !== -1 ? String(row[colStatus] || '').trim() : '';
+
+        if (!customerMap[valId]) {
+          customerMap[valId] = {
             id: valId,
             name: String(row[colName] || '名無し'),
-            link: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${gid}&range=${startRow + j}:${startRow + j}`,
-            status: '', date: ''
-          });
-          processedIds.add(valId);
+            link: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${gid}&range=${j + 1}:${j + 1}`,
+            status: foundStatus,
+            date: ''
+          };
+        } else {
+          // STATUS ENRICHMENT: If previous tab had no status, but this one does, UPDATE it.
+          if (!customerMap[valId].status && foundStatus) {
+            customerMap[valId].status = foundStatus;
+          }
         }
       }
     }
   } catch (e) { log(`Error: ${e.toString()}`); }
 
-  // IF NO CUSTOMERS, RETURN LOGS
+  const customers = Object.values(customerMap);
+
   if (customers.length === 0) {
-    customers.push({ id: 'DBG0', name: '⚠️ デバッグモード v503', link: '' });
+    customers.push({ id: 'DBG0', name: '⚠️ 読込失敗: デバッグログ表示', link: '' });
     debugLogs.forEach((l, i) => {
       customers.push({ id: `LOG${i}`, name: l.substring(0, 100), link: '' });
     });
   }
 
-  cache.put(cacheKey, JSON.stringify(customers), 21600);
+  try {
+    cache.put(cacheKey, JSON.stringify(customers), 21600);
+  } catch (e) {
+    // Ignore cache error (Payload too large etc) - just return data
+    log(`Cache Error: ${e.toString()}`);
+  }
   return customers;
 }
 
@@ -141,21 +179,37 @@ function getPaymentCustomerList(spreadsheetId, providedSs) {
   const ss = providedSs || openSsSafely(spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
   const sheet = getSheetFuzzy(ss, SHEET_PAYMENT_LIST);
   if (!sheet) return [];
-  const lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return [];
-  const readStart = Math.max(1, lastRow - 500 + 1);
-  const data = sheet.getRange(readStart, 1, Math.min(500, lastRow), sheet.getLastColumn()).getValues();
-  const hRows = sheet.getRange(1, 1, 2, sheet.getLastColumn()).getValues();
+
+  // Use getDataRange to avoid "Empty Rows at Bottom" issue
+  const allData = sheet.getDataRange().getValues();
+  const hRows = allData.slice(0, 2);
+
   let headers = hRows[1].join('').includes('\u9762\u8ac7ID') ? hRows[1] : hRows[0];
-  let offset = (readStart === 1) ? (hRows[1].join('').includes('\u9762\u8ac7ID') ? 2 : 1) : 0;
+  let offset = (hRows[1].join('').includes('\u9762\u8ac7ID') ? 2 : 1);
+
   const colId = findColIndex(headers, ['\u9762\u8ac7ID', 'ID']);
+  const colId2 = findColIndex(headers, ['\u9867\u5ba2ID', 'CID']); // Secondary
   const colName = findColIndex(headers, ['\u5951\u7d04\u540d\u7fa9', '\u540d\u524d']);
-  if (colId === -1 || colName === -1) return [];
+
+  if ((colId === -1 && colId2 === -1) || colName === -1) return [];
+
   const customers = [], processed = new Set();
-  for (let i = data.length - 1; i >= offset; i--) {
-    const id = String(data[i][colId]).trim();
+  // Iterate from bottom up
+  for (let i = allData.length - 1; i >= offset; i--) {
+    const row = allData[i];
+    let id = String(row[colId] || '').trim();
+
+    // Fallback ID
+    if ((!id || id === '') && colId2 !== -1) {
+      id = String(row[colId2] || '').trim();
+    }
+
     if (id && id !== '' && !processed.has(id)) {
-      customers.push({ id: id, customerName: String(data[i][colName]).trim(), link: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${sheet.getSheetId()}&range=${readStart + i}:${readStart + i}` });
+      customers.push({
+        id: id,
+        customerName: String(row[colName] || '名無し').trim(),
+        link: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit#gid=${sheet.getSheetId()}&range=${i + 1}:${i + 1}`
+      });
       processed.add(id);
     }
   }
@@ -163,25 +217,86 @@ function getPaymentCustomerList(spreadsheetId, providedSs) {
 }
 
 function getOverduePaymentList(spreadsheetId) {
-  const ss = openSsSafely(spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
-  const sheet = ss.getSheetByName(SHEET_PAYMENT_LIST);
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return [];
-  const customerList = getCustomerList(spreadsheetId);
-  const statusMap = {};
-  customerList.forEach(c => { statusMap[c.id] = c.status; });
-  const INCLUDED = ['\u6210\u7d04', '\u5951\u7d04\u6e08\u307f(\u5165\u91d1\u5f85\u3061)'];
-  const overdue = [];
-  for (let i = data.length - 1; i >= 1; i--) {
-    const row = data[i], id = String(row[0]).trim();
-    if (!id || !INCLUDED.includes(statusMap[id])) continue;
-    const amount = Number(row[9]) || 0, paid = Number(row[10]) || 0;
-    if (amount > paid && row[4]) {
-      const diff = Math.floor((new Date() - new Date(row[4])) / 86400000);
-      overdue.push({ id, customerName: String(row[1]).trim(), contractDate: Utilities.formatDate(new Date(row[4]), 'Asia/Tokyo', 'yyyy/MM/dd'), overdueDays: diff });
+  try {
+    const ss = openSsSafely(spreadsheetId, '個別シート');
+    const sheet = getSheetFuzzy(ss, SHEET_PAYMENT_LIST);
+    if (!sheet) return [];
+
+    const allData = sheet.getDataRange().getValues();
+    if (allData.length <= 1) return [];
+
+    const hRows = allData.slice(0, 2);
+    let headers = hRows[1].join('').includes('面談ID') ? hRows[1] : hRows[0];
+    let offset = (hRows[1].join('').includes('面談ID') ? 2 : 1);
+
+    const colId = findColIndex(headers, ['面談ID', 'ID']);
+    const colId2 = findColIndex(headers, ['顧客ID', 'CID']);
+    const colName = findColIndex(headers, ['名前', '氏名', '契約名義']);
+    const colDate = findColIndex(headers, ['契約締結日', '日付', '契約日']);
+    const colAmount = findColIndex(headers, ['発生売上', '販売金額', '成約金額']);
+    const colPaid = findColIndex(headers, ['現在入金額', '入金額', '入金済み']);
+
+    const debugInfo = `ID:${colId} Name:${colName} Amt:${colAmount} Paid:${colPaid}`;
+    log(`[Overdue] ${debugInfo}`);
+
+    if (colId === -1 && colId2 === -1) return [];
+
+    // Get current statuses
+    const customerList = getCustomerList(spreadsheetId);
+    const statusMap = {};
+    customerList.forEach(c => { if (c.id) statusMap[c.id] = c.status; });
+
+    // Finalize Exclusions List (Business Rule)
+    const EXCLUDE = ['クーリングオフ', '入金前解除', '却下', 'キャンセル', '入金前解約', '契約前辞退', '非成約', '面談前キャンセル'];
+
+    const overdue = [];
+    for (let i = allData.length - 1; i >= offset; i--) {
+      const row = allData[i];
+      let id = String(row[colId] || '').trim();
+      if ((!id || id === '') && colId2 !== -1) id = String(row[colId2] || '').trim();
+
+      if (!id || id === 'ID' || id === '面談ID') continue;
+
+      // Status check - Robust Fuzzy Match (Ignore Spacing/Full-width)
+      const currentStatus = statusMap[id] || '';
+      if (isMatchFuzzy(currentStatus, EXCLUDE)) continue;
+
+      const amount = parsePrice(row[colAmount]);
+      const paid = parsePrice(row[colPaid]);
+      const dateVal = row[colDate] || '';
+
+      // If amount > paid, it is an alert
+      if (amount > paid) {
+        try {
+          const d = (dateVal && dateVal !== '') ? new Date(dateVal) : new Date();
+          const diff = Math.floor((new Date() - d) / 86400000);
+          overdue.push({
+            id,
+            customerName: String(row[colName] || '名無し').trim(),
+            contractDate: dateVal ? Utilities.formatDate(d, 'Asia/Tokyo', 'yyyy/MM/dd') : '----/--/--',
+            overdueDays: diff >= 0 ? diff : 0,
+            unpaidAmount: amount - paid
+          });
+        } catch (err) { /* invalid date */ }
+      }
     }
+
+    if (overdue.length === 0) {
+      const hClip = headers.join('|').substring(0, 30);
+      return [{
+        id: 'DEBUG',
+        customerName: `⚠️ 0件 (判定列: ${debugInfo})`,
+        contractDate: `Head: ${hClip}`,
+        overdueDays: 0,
+        unpaidAmount: 0
+      }];
+    }
+    // Newest first (Shortest overdue days at the top)
+    return overdue.sort((a, b) => a.overdueDays - b.overdueDays);
+  } catch (e) {
+    console.error('getOverduePaymentList Error:', e);
+    return [];
   }
-  return overdue.sort((a, b) => a.overdueDays - b.overdueDays);
 }
 
 function getPaymentMethods(spreadsheetId, providedSs) { return getMasterDropdowns().paymentGrouping; }
@@ -201,31 +316,58 @@ function getPlanList() {
 
 function submitReport(formData) {
   try {
-    const ss = openSsSafely(formData.spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
-    const sheet = ss.getSheetByName(SHEET_PAYMENT_LIST);
+    const ss = openSsSafely(formData.spreadsheetId, '個別シート');
+    const sheet = getSheetFuzzy(ss, SHEET_PAYMENT_LIST);
+    if (!sheet) throw new Error('「入金管理リスト」シートが見つからないぜ。');
+
+    // Find existing row by Interview ID
     const found = sheet.getRange('A:A').createTextFinder(formData.interviewId).matchEntireCell(true).findNext();
-    const row = found ? found.getRow() : sheet.getLastRow() + 1;
-    sheet.getRange(row, 1, 1, 6).setValues([[formData.interviewId, formData.contractName, formData.onboarding ? '\u25ef' : '', formData.paymentMethod, formData.contractDate, '']]);
+    let row;
+    if (found) {
+      row = found.getRow();
+    } else {
+      // Find FIRST empty row in Col A starting from row 3 (after headers)
+      const vals = sheet.getRange('A:A').getValues();
+      row = vals.length + 1; // Default to absolute end if no empty row found in current range
+      for (let i = 2; i < vals.length; i++) {
+        if (!vals[i][0] || String(vals[i][0]).trim() === "") { row = i + 1; break; }
+      }
+    }
+
+    // Safety check: Don't overwrite headers
+    if (row < 3) row = 3;
+
+    // 入力規則違反を防ぐため、個別にセルへ書き込む（空文字はスキップ）
+    sheet.getRange(row, 1).setValue(formData.interviewId);
+    sheet.getRange(row, 2).setValue(formData.contractName);
+    if (formData.onboarding) sheet.getRange(row, 3).setValue('◯');
+    sheet.getRange(row, 4).setValue(formData.paymentMethod);
+    sheet.getRange(row, 5).setValue(formData.contractDate);
     sheet.getRange(row, 10).setValue(formData.salesAmount);
     if (formData.notes) sheet.getRange(row, 2).setNote(formData.notes.trim());
-    return { success: true, message: '\u5831\u544a\u5b8c\u4e86' };
+    return { success: true, message: '報告完了だぜ！' };
   } catch (e) { return { success: false, message: e.toString() }; }
 }
 
 function submitPayment(formData) {
   try {
-    const ss = openSsSafely(formData.spreadsheetId, '\u500b\u5225\u30b7\u30fc\u30c8');
-    const sheet = ss.getSheetByName(SHEET_PAYMENT_LIST);
+    const ss = openSsSafely(formData.spreadsheetId, '個別シート');
+    const sheet = getSheetFuzzy(ss, SHEET_PAYMENT_LIST);
+    if (!sheet) throw new Error('「入金管理リスト」シートが見つからないぜ。');
+
+    // Find row by Interview ID (Col A)
     const found = sheet.getRange('A:A').createTextFinder(formData.customerId).matchEntireCell(true).findNext();
-    if (!found) return { success: false, message: '\u9867\u5ba2\u4e0d\u660e' };
+    if (!found) return { success: false, message: '顧客（面談ID）がシートで見つからないぜ。' };
     const r = found.getRow();
+
+    // Find empty slot for payment (Columns M, Q, U... every 4 columns)
     for (let c = 13; c < 13 + 12 * 4; c += 4) {
       if (!sheet.getRange(r, c).getValue()) {
         sheet.getRange(r, c, 1, 3).setValues([[formData.paymentDate, formData.paymentAmount, formData.paymentMethod]]);
-        return { success: true, message: '\u5165\u91d1\u5831\u544a\u5b8c\u4e86' };
+        return { success: true, message: '入金報告完了だぜ！' };
       }
     }
-    return { success: false, message: '\u30b9\u30ed\u30c3\u30c8\u6e80\u676f' };
+    return { success: false, message: '入金枠がいっぱいだぜ。管理者に相談してくれ。' };
   } catch (e) { return { success: false, message: e.toString() }; }
 }
 
@@ -297,7 +439,10 @@ function getInitialData(spreadsheetId, staffName) {
   return {
     planList: getPlanList(),
     customerList: getCustomerList(spreadsheetId, staffName),
-    paymentMethods: getMasterDropdowns().paymentMethods
+    paymentCustomerList: getPaymentCustomerList(spreadsheetId), // ADDED
+    paymentMethods: getMasterDropdowns().paymentMethods,
+    paymentMethodsH: getMasterDropdowns().paymentMethods, // ADDED for PaymentForm
+    systemVersion: 'v2026.0124.0830_SCAN_RANGE_FIX' // UPDATED VERSION
   };
 }
 
@@ -305,29 +450,30 @@ function doPost(e) {
   try {
     const json = JSON.parse(e.postData.contents);
     const action = json.action;
+    const p = json.params || {}; // Extract params from nested object
     let result;
 
     switch (action) {
       case 'getInitialData':
-        result = getInitialData(json.spreadsheetId, json.staffName);
+        result = getInitialData(p.spreadsheetId, p.staffName);
         break;
       case 'getCustomerList':
-        result = getCustomerList(json.spreadsheetId, json.staffName, null, json.targetGid);
+        result = getCustomerList(p.spreadsheetId, p.staffName, null, p.targetGid);
         break;
       case 'getPaymentCustomerList':
-        result = getPaymentCustomerList(json.spreadsheetId);
+        result = getPaymentCustomerList(p.spreadsheetId);
         break;
       case 'getOverduePaymentList':
-        result = getOverduePaymentList(json.spreadsheetId);
+        result = getOverduePaymentList(p.spreadsheetId);
         break;
       case 'submitReport':
-        result = submitReport(json);
+        result = submitReport(p.formData || p);
         break;
       case 'submitPayment':
-        result = submitPayment(json);
+        result = submitPayment(p.formData || p);
         break;
       case 'authenticateByPIN':
-        result = authenticateByPIN(json.pin);
+        result = authenticateByPIN(p.pin);
         break;
       case 'getPlanList':
         result = getPlanList();
@@ -346,7 +492,8 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
-    const errorResponse = { error: err.toString(), stack: err.stack };
+    // Return standard error format for client
+    const errorResponse = { success: false, message: `GAS Error: ${err.toString()}` };
     return ContentService.createTextOutput(JSON.stringify(errorResponse))
       .setMimeType(ContentService.MimeType.JSON);
   }
